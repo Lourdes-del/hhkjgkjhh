@@ -9,10 +9,12 @@
 <body>
   <div id="game">
 
-    <!-- 场景：图片 + 透明热点层 + 额外效果层 -->
+    <!-- 场景：图片 + 透明热点层 + 彩蛋层 + 额外效果层 -->
     <div id="scene-container">
       <img id="scene-image" alt="场景图片">
       <div id="hotspot-layer"></div>
+      <div id="egg-layer"></div>
+      <div id="clock-display" class="hidden">03:16</div>
       <div id="shadow-extra" class="hidden">多出来的影子</div>
       <div id="glitch-text"></div>
     </div>
@@ -32,8 +34,8 @@
     <!-- 左下角：已获得道具 -->
     <div id="inventory-indicator" class="hidden"></div>
 
-    <!-- 左下角：已发现的密码线索 -->
-    <div id="clues-indicator" class="hidden"></div>
+    <!-- 左下角：已发现彩蛋计数 -->
+    <div id="egg-indicator">fragments: 0 / 5</div>
 
     <!-- 底部字幕（主行 + 小字行） -->
     <div id="subtitle"></div>

@@ -18,55 +18,87 @@ const IMAGE_PATHS = {
   normalEnding:    "Dreamcore场景/结局/出口普通结局.jpg",
 };
 
-/* ---------- 二、配置对象：密码线索 / 道具 / 小游戏 ---------- */
+/* ---------- 二、配置对象：密码 / 道具 / 小游戏 / 彩蛋 ---------- */
 
-/* 密码线索（数字按密码 0317 的位置排列） */
-const CLUES = {
-  "clue-0": { id: "clue-0", digit: "0", position: 0 },
-  "clue-3": { id: "clue-3", digit: "3", position: 1 },
-  "clue-1": { id: "clue-1", digit: "1", position: 2 },
-  "clue-7": { id: "clue-7", digit: "7", position: 3 },
-};
-const CLUE_IDS = ["clue-0", "clue-3", "clue-1", "clue-7"];
+/* 售货机密码固定为 0317 */
 const VENDING_CODE = "0317";
 
 /* 道具（与对应小游戏的映射） */
 const itemConfig = {
-  "old-ticket": { id: "old-ticket", name: "旧游乐园门票", icon: "🎫", miniGame: "memoryMatch" },
-  "orange-cap":  { id: "orange-cap",  name: "橙色汽水瓶盖", icon: "🥤", miniGame: "vendingCode" },
-  "wet-note":    { id: "wet-note",    name: "湿掉的寻人纸条", icon: "📜", miniGame: "noteArrange" },
+  "wet-note":    { id: "wet-note",    name: "湿掉的寻人纸条", icon: "📜", miniGame: "paperMaze" },
+  "old-ticket":  { id: "old-ticket",  name: "旧游乐园门票",   icon: "🎫", miniGame: "ticketOrder" },
+  "orange-cap":  { id: "orange-cap",  name: "橙色汽水瓶盖",   icon: "🥤", miniGame: "machineMemory" },
 };
 
-/* 小游戏（三种不同的交互方式：翻牌 / 密码输入 / 拖拽排序） */
+/* 小游戏（三种不同交互：迷宫 / 排序 / 反应记忆） */
 const MINI_GAMES = {
-  memoryMatch: {
-    id: "memoryMatch",
-    title: "记忆翻牌",
-    prompt: "翻开卡片，找出所有相同的图案。",
-    wrong: "这段记忆还没有拼完整。",
-    itemId: "old-ticket",
-    symbols: ["🕒", "🥤", "🎫"], // 3 对图案
-  },
-  vendingCode: {
-    id: "vendingCode",
-    title: "自动售货机密码",
-    prompt: "输入正确的密码",
-    wrong: "这个数字不属于今天。",
-    itemId: "orange-cap",
-  },
-  noteArrange: {
-    id: "noteArrange",
-    title: "纸条复原",
-    prompt: "拖拽文字卡片，还原这句话。",
-    wrong: "字迹还没有恢复。",
+  paperMaze: {
+    id: "paperMaze",
+    title: "湿掉的寻人纸条",
+    prompt: "控制光点从入口走到出口。",
+    wrong: "这条路通向已经发生的事情。",
     itemId: "wet-note",
-    fragments: ["如果你看到他，", "请告诉他", "我已经", "回家了。"],
+  },
+  ticketOrder: {
+    id: "ticketOrder",
+    title: "记忆排序",
+    prompt: "点击两张卡片交换，排出正确顺序。",
+    wrong: "记忆的顺序不对。",
+    itemId: "old-ticket",
+    fragments: ["我们买了门票。", "闭园铃响了。", "我松开了他的手。", "我没有回头。"],
+  },
+  machineMemory: {
+    id: "machineMemory",
+    title: "售货机记忆",
+    prompt: "记住符号闪烁的顺序，然后重复。",
+    wrong: "你没有跟上那天的声音。",
+    itemId: "orange-cap",
+    symbols: ["🟠", "🔵", "🟢", "🟡"],
+  },
+};
+
+/* 迷宫布局：0 = 通路，1 = 墙；起点 (0,0)，终点 (6,6) */
+const MAZE = [
+  [0, 0, 0, 1, 0, 0, 0],
+  [0, 1, 0, 1, 0, 1, 0],
+  [0, 1, 0, 0, 0, 1, 0],
+  [0, 1, 1, 1, 0, 1, 0],
+  [0, 0, 0, 0, 0, 1, 0],
+  [0, 1, 1, 1, 1, 1, 0],
+  [0, 0, 0, 0, 0, 0, 0],
+];
+
+/* 五个彩蛋（地图图标 + 透明点击区域 + 独立 id） */
+const EASTER_EGGS = {
+  "egg-clock": {
+    id: "egg-clock", name: "停摆的钟", scene: "start", icon: "🕰️",
+    left: "20%", top: "6%",
+    text: ["时间不是向前流逝。", "只是我们无法回到它原来的位置。"],
+  },
+  "egg-frame": {
+    id: "egg-frame", name: "空照片框", scene: "vendingMachine", icon: "🖼️",
+    left: "22%", top: "16%",
+    text: ["如果记忆必须被看见，", "那么没有人记得的事情，是否真的发生过？"],
+  },
+  "egg-speaker": {
+    id: "egg-speaker", name: "广播喇叭", scene: "plasticBall", icon: "📢",
+    left: "72%", top: "14%",
+    text: ["广播每天重复同一句话。", "重复得足够久，谎言也会获得现实的形状。"],
+  },
+  "egg-water": {
+    id: "egg-water", name: "没有倒影的水面", scene: "poolSlide", icon: "◯",
+    left: "40%", top: "72%",
+    text: ["倒影证明不了真实。", "它只能证明，有什么东西正在看着水面。"],
+  },
+  "egg-bench": {
+    id: "egg-bench", name: "空长椅", scene: "yellowDuck", icon: "🪑",
+    left: "12%", top: "62%",
+    text: ["等待不是一种动作。", "等待是把自己变成一个不会离开的人。"],
   },
 };
 
 /* ---------- 三、剧情文案（独立配置对象，便于修改） ---------- */
 const storyText = {
-  // 精神降维后，各场景偶尔出现的碎语
   occasional: [
     "请不要再寻找不存在的人。",
     "你已经重复了很多次。",
@@ -76,6 +108,8 @@ const storyText = {
   start: {
     first: ["欢迎回来。", "我们是不是已经来过这里了？"],
     revisit: "这里…好像和上次不太一样。",
+    clockFirst: "它停在我们走散的那一分钟。",
+    clockSecond: ["不应该过去的时间，过去了。", "03:17，这是售货机一直等待的时间。"],
   },
 
   vendingMachine: {
@@ -83,7 +117,7 @@ const storyText = {
     anomaly: "再点要散架了",
     anomalySub: "它和我一样，只是还没有承认自己坏了。",
     reenter: "刚才售货机里，真的有声音吗？",
-    refuse: ["售货机拒绝回应。", "你还不知道它在等待哪个时间。"],
+    refuse: ["售货机拒绝回应。", "它还在等待那个时间。"],
     solved: "售货机不再回应了。",
   },
 
@@ -124,18 +158,21 @@ const storyText = {
     after: ["不是世界变了。", "是你终于发现，自己一直没有在世界里面。"],
   },
 
-  clues: {
-    "clue-0": "停在午夜之后。",
-    "clue-3": "牌子背面刻着：第三个数字。",
-    "clue-1": "水退去以后，地上留下了一个数字。",
-    "clue-7": "最后一个数字藏在闭园时间里。",
-    allFound: ["所有数字终于拼在了一起。", "0317——那天游乐园停止营业的时间。"],
-  },
-
   items: {
+    "wet-note": ["如果你看到他，请告诉他我已经回家了。", "落款的名字，是我的。"],
     "old-ticket": ["门票上有两个名字。", "其中一个被水泡开了。", "背面写着：闭园前请牵好身边的人。", "我当时没有牵住。"],
     "orange-cap": ["售货机里没有汽水。", "只有一个被遗忘的瓶盖。", "那天他想喝橙色汽水。", "我说，离开的时候再买。"],
-    "wet-note": ["如果你看到他，请告诉他我已经回家了。", "落款的名字，是我的。"],
+  },
+
+  password: {
+    title: "自动售货机",
+    prompt: "输入密码",
+    wrong: "这个数字不属于今天。",
+  },
+
+  easterEggs: {
+    known: "你已经知道这里了。",
+    allFound: ["你寻找的不是隐藏物。", "你只是需要一些证据，证明自己曾经来过。"],
   },
 
   endings: {
@@ -178,16 +215,14 @@ const gameState = {
   triggeredAnomalies: [],
   inventory: [],
   completedMiniGames: [],
-  discoveredClues: [],
-  vendingCode: "",
-  hasKeyItem: false,
+  clockClicks: 0,            // 开局时钟点击次数
+  passwordSolved: false,     // 售货机密码是否已输入正确
+  discoveredEasterEggs: [],  // 已发现彩蛋 id
   ending: null,
   gameOver: false
 };
 
 /* ---------- 五、场景与热点（对象管理） ---------- */
-/* 热点坐标：基于颜色分析 + 构图估算。
-   可用右下角「显示热区」按钮在浏览器里核对位置，再回到这里微调。 */
 const SCENES = {
   start: {
     name: "start",
@@ -226,7 +261,6 @@ const SCENES = {
     back: "start",
     hotspots: [
       { rect: { left: "30%", top: "45%", width: "45%", height: "45%" }, action: "pool" },
-      { rect: { left: "6%", top: "74%", width: "20%", height: "16%" }, action: "water-mark" },
     ],
   },
 
@@ -247,7 +281,6 @@ const SCENES = {
     back: "poolSlide",
     hotspots: [
       { rect: { left: "36%", top: "35%", width: "30%", height: "35%" }, action: "duck" },
-      { rect: { left: "2%", top: "2%", width: "18%", height: "18%" }, action: "clue-7-corner" },
     ],
   },
 
@@ -262,25 +295,28 @@ const SCENES = {
 };
 
 /* ---------- 六、模块级运行时状态（不入 gameState） ---------- */
-let endingSteps = [];        // 结局步骤序列
-let endingStepIndex = -1;    // 当前结局步骤
-let mentalPromptShown = false; // 精神降维提示是否已显示
-let messageTimer = null;     // 字幕自动隐藏计时器
-let doorTriggered = false;   // 出口门是否已点击
-let seqToken = 0;            // 字幕序列令牌（切换场景后中止旧序列）
+let endingSteps = [];
+let endingStepIndex = -1;
+let mentalPromptShown = false;
+let messageTimer = null;
+let doorTriggered = false;
+let seqToken = 0;
 
-// 新增：小游戏与线索相关运行时状态
-let activeMiniGame = null;   // 当前打开的小游戏 id（null 表示关闭）
-let duckRevealed = false;    // 小黄鸭是否已点击过（用于揭示角落线索）
+// 密码输入与小游戏状态
+let activeMiniGame = null;   // 当前小游戏 id
+let passwordMode = false;    // 是否处于密码输入模式
+let vendingInput = "";       // 密码输入
 let noteRevealed = false;    // 塑料球下的纸条是否已翻开
-let vendingInput = "";       // 售货机密码输入
-// 记忆翻牌
-let matchCards = [];         // [{ value, matched }]，共 6 张
-let matchFlipped = [];       // 当前翻开的两张卡的索引
-let matchBusy = false;       // 翻回动画期间锁住交互
-// 纸条拖拽
-let noteOrder = [];          // 当前顺序（片段原始索引数组）
-let dragIndex = null;        // 正在拖拽的卡片槽位
+// 迷宫
+let mazePos = { r: 0, c: 0 };
+// 记忆排序
+let ticketOrder = [];
+let ticketSelected = null;
+// 反应记忆
+let machineSequence = [];
+let machineStep = 0;
+let machinePhase = "watch";  // "watch" 闪烁中 | "repeat" 玩家重复中
+let machineTimer = null;
 
 /* ---------- 七、音频系统（Web Audio 实时合成） ---------- */
 const audio = {
@@ -315,12 +351,14 @@ const $ = (id) => document.getElementById(id);
 const sceneContainer = $("scene-container");
 const sceneImage = $("scene-image");
 const hotspotLayer = $("hotspot-layer");
+const eggLayer = $("egg-layer");
+const clockDisplay = $("clock-display");
 const backButton = $("back-button");
 const restartButton = $("restart-button");
 const soundButton = $("sound-button");
 const debugButton = $("debug-button");
 const inventoryIndicator = $("inventory-indicator");
-const cluesIndicator = $("clues-indicator");
+const eggIndicator = $("egg-indicator");
 const subtitle = $("subtitle");
 const subtitleSub = $("subtitle-sub");
 const overlay = $("overlay");
@@ -344,21 +382,18 @@ const miniGameClose = $("mini-game-close");
    九、核心游戏逻辑
    ============================================================ */
 
-/* 进入场景 */
 function enterScene(sceneName) {
   if (!SCENES[sceneName]) return;
 
-  seqToken++; // 使旧的字幕序列失效
+  seqToken++;
   gameState.previousScene = gameState.currentScene;
   gameState.currentScene = sceneName;
-
   gameState.visitCount[sceneName] = (gameState.visitCount[sceneName] || 0) + 1;
 
   renderScene();
   onSceneEnter(sceneName);
 }
 
-/* 渲染当前场景 */
 function renderScene() {
   const scene = SCENES[gameState.currentScene];
 
@@ -368,13 +403,21 @@ function renderScene() {
     showMessage(storyText.imageError + scene.image, { duration: 6000 });
   };
 
-  // 淡入
   sceneContainer.classList.remove("hidden");
   sceneContainer.classList.remove("visible");
   void sceneContainer.offsetWidth;
   sceneContainer.classList.add("visible");
 
   addHotspots(scene);
+  renderEggs(gameState.currentScene);
+
+  // 时钟显示（仅开局界面）
+  if (gameState.currentScene === "start") {
+    clockDisplay.classList.remove("hidden");
+    updateClockDisplay();
+  } else {
+    clockDisplay.classList.add("hidden");
+  }
 
   if (scene.back) {
     backButton.classList.remove("hidden");
@@ -383,7 +426,7 @@ function renderScene() {
   }
 
   updateInventory();
-  updateCluesIndicator();
+  updateEggIndicator();
   updateShadowExtra();
 
   subtitle.classList.remove("visible");
@@ -391,7 +434,6 @@ function renderScene() {
   glitchTextEl.classList.remove("active");
 }
 
-/* 生成透明热点 */
 function addHotspots(scene) {
   hotspotLayer.innerHTML = "";
   (scene.hotspots || []).forEach((h) => {
@@ -406,7 +448,7 @@ function addHotspots(scene) {
 
     el.addEventListener("click", (e) => {
       e.stopPropagation();
-      if (activeMiniGame) return; // 小游戏打开时暂停普通场景热点
+      if (activeMiniGame || passwordMode) return; // 小游戏/密码输入时暂停场景热点
       if (gameState.gameOver) return;
 
       if (h.go) {
@@ -421,50 +463,48 @@ function addHotspots(scene) {
   });
 }
 
-/* 热点动作分发 */
 function handleAction(sceneName, action) {
   switch (action) {
+    case "clock":
+      handleClock();
+      break;
+
     case "vending": {
-      // 已通关：不再回应
-      if (gameState.completedMiniGames.includes("vendingCode")) {
+      if (gameState.completedMiniGames.includes("machineMemory")) {
         showMessage(storyText.vendingMachine.solved);
         break;
       }
-      // 已触发异常：进入密码阶段
-      if (gameState.triggeredAnomalies.includes("vending-machine")) {
-        if (hasAllClues()) {
-          openMiniGame("vendingCode");
-        } else {
-          showSequence(storyText.vendingMachine.refuse, { interval: 1700, duration: 1600 });
-        }
+      if (gameState.clockClicks < 2) {
+        showSequence(storyText.vendingMachine.refuse, { interval: 1700, duration: 1600 });
         break;
       }
-      // 首次点击：保留原有异常
-      showSequence(
-        [storyText.vendingMachine.click],
-        {
-          interval: 1700,
-          duration: 1600,
-          onDone: () => {
-            if (triggerAnomaly("vending-machine", storyText.vendingMachine.anomaly, { sub: storyText.vendingMachine.anomalySub })) {
-              shakeScreen("hard");
-              playVendingBeep();
-            }
-          },
-        }
-      );
+      // 时钟已两次：首次触发售货机异常，之后进入密码
+      if (!gameState.triggeredAnomalies.includes("vending-machine")) {
+        showSequence(
+          [storyText.vendingMachine.click],
+          {
+            interval: 1700,
+            duration: 1600,
+            onDone: () => {
+              if (triggerAnomaly("vending-machine", storyText.vendingMachine.anomaly, { sub: storyText.vendingMachine.anomalySub })) {
+                shakeScreen("hard");
+                playVendingBeep();
+              }
+            },
+          }
+        );
+        break;
+      }
+      if (!gameState.passwordSolved) {
+        openPasswordEntry();
+        break;
+      }
+      openMiniGame("machineMemory");
       break;
     }
 
-    case "exit-sign": {
-      // 已获得线索：不再响应
-      if (gameState.discoveredClues.includes("clue-3")) break;
-      // 第二次点击：获得线索
-      if (gameState.triggeredAnomalies.includes("exit-sign")) {
-        discoverClue("clue-3");
-        break;
-      }
-      // 第一次点击：异常
+    case "exit-sign":
+      if (gameState.triggeredAnomalies.includes("exit-sign")) break;
       shakeScreen("light");
       flashGlitchText("故障");
       showSequence(
@@ -478,7 +518,6 @@ function handleAction(sceneName, action) {
         }
       );
       break;
-    }
 
     case "pool":
       playNavSound();
@@ -496,15 +535,15 @@ function handleAction(sceneName, action) {
       break;
 
     case "poolside":
-      if (gameState.completedMiniGames.includes("memoryMatch")) {
+      if (gameState.completedMiniGames.includes("ticketOrder")) {
         showMessage(storyText.poolSlide.poolsideDone);
         break;
       }
-      openMiniGame("memoryMatch");
+      openMiniGame("ticketOrder");
       break;
 
     case "paper":
-      if (gameState.completedMiniGames.includes("noteArrange")) {
+      if (gameState.completedMiniGames.includes("paperMaze")) {
         showMessage(storyText.plasticBall.paperDone);
         break;
       }
@@ -512,33 +551,16 @@ function handleAction(sceneName, action) {
         noteRevealed = true;
         showSequence(storyText.plasticBall.paperFirst, { interval: 2000, duration: 1900 });
       } else {
-        openMiniGame("noteArrange");
+        openMiniGame("paperMaze");
       }
-      break;
-
-    case "clock":
-      playClick();
-      discoverClue("clue-0");
-      break;
-
-    case "water-mark":
-      playClick();
-      discoverClue("clue-1");
       break;
 
     case "duck":
       playNavSound();
-      if (duckRevealed) {
-        enterScene("exit");
-      } else {
-        duckRevealed = true;
-        showSequence(storyText.yellowDuck.duck, { interval: 1500, duration: 1400 });
-      }
-      break;
-
-    case "clue-7-corner":
-      if (!duckRevealed) break; // 未点过小黄鸭，角落无反应
-      discoverClue("clue-7");
+      showSequence(
+        storyText.yellowDuck.duck,
+        { interval: 1500, duration: 1400, onDone: () => enterScene("exit") }
+      );
       break;
 
     case "door":
@@ -559,7 +581,6 @@ function handleAction(sceneName, action) {
   }
 }
 
-/* 场景进入时的额外逻辑（进入次数、剧情、额外异常） */
 function onSceneEnter(sceneName) {
   const visits = gameState.visitCount[sceneName] || 0;
 
@@ -614,7 +635,6 @@ function onSceneEnter(sceneName) {
   maybeOccasionalLine();
 }
 
-/* 触发异常：一次性、去重、计数可选、可带小字 */
 function triggerAnomaly(anomalyId, message, options = {}) {
   const { count = true, sub = "" } = options;
 
@@ -635,7 +655,6 @@ function triggerAnomaly(anomalyId, message, options = {}) {
   return true;
 }
 
-/* 底部字幕（支持一行小字，自动隐藏） */
 function showMessage(main, opts) {
   let duration = 3200;
   let sub = "";
@@ -662,14 +681,13 @@ function showMessage(main, opts) {
   }, duration);
 }
 
-/* 顺序播放多条字幕，可带结束回调；切换场景后自动中止 */
 function showSequence(messages, options = {}) {
   const { interval = 1500, duration = 1400, onDone = null } = options;
   const token = seqToken;
   let i = 0;
 
   const step = () => {
-    if (token !== seqToken) return; // 场景已切换，中止
+    if (token !== seqToken) return;
     if (i >= messages.length) {
       if (onDone) onDone();
       return;
@@ -686,7 +704,6 @@ function showSequence(messages, options = {}) {
   step();
 }
 
-/* 精神降维后，偶尔出现的碎语 */
 function maybeOccasionalLine() {
   if (!mentalPromptShown) return;
   if (Math.random() > 0.22) return;
@@ -699,7 +716,6 @@ function maybeOccasionalLine() {
   }, 4200);
 }
 
-/* 短暂故障文字 */
 function flashGlitchText(text) {
   glitchTextEl.textContent = text;
   glitchTextEl.classList.add("active");
@@ -709,7 +725,6 @@ function flashGlitchText(text) {
   }, 1200);
 }
 
-/* 画面晃动 */
 function shakeScreen(intensity) {
   sceneContainer.classList.remove("shake", "shake-hard");
   void sceneContainer.offsetWidth;
@@ -719,7 +734,6 @@ function shakeScreen(intensity) {
   }, 700);
 }
 
-/* 精神降维提示：anomalyCount 第一次达到上限 */
 function maybeMentalDegradation() {
   if (mentalPromptShown) return;
   if (gameState.anomalyCount !== gameState.anomalyLimit) return;
@@ -738,7 +752,6 @@ function maybeMentalDegradation() {
   }, 2600);
 }
 
-/* 额外异常：小黄鸭场景角落「多出来的影子」 */
 function triggerExtraShadow() {
   if (gameState.triggeredAnomalies.includes("shadow-extra")) return;
   gameState.triggeredAnomalies.push("shadow-extra");
@@ -755,125 +768,40 @@ function updateShadowExtra() {
 }
 
 /* ============================================================
-   十、密码线索 / 道具 / 小游戏系统
+   十、时钟密码 / 彩蛋 / 道具
    ============================================================ */
 
-/* 发现一条密码线索（同一线索只能获得一次，不增加 anomalyCount） */
-function discoverClue(clueId) {
-  const clue = CLUES[clueId];
-  if (!clue) return;
-  if (gameState.discoveredClues.includes(clueId)) return;
+/* 更新时钟显示：未点击为 03:16，点击过为 03:17 */
+function updateClockDisplay() {
+  if (!clockDisplay) return;
+  clockDisplay.textContent = gameState.clockClicks === 0 ? "03:16" : "03:17";
+}
 
-  gameState.discoveredClues.push(clueId);
-  updateCluesIndicator();
+/* 点击开局时钟 */
+function handleClock() {
+  playClick();
+  if (gameState.clockClicks >= 2) return; // 已解锁，不再变化
 
-  if (hasAllClues()) {
-    gameState.vendingCode = VENDING_CODE;
-    showSequence(
-      [storyText.clues[clueId], ...storyText.clues.allFound],
-      { interval: 2400, duration: 2300 }
-    );
+  if (gameState.clockClicks === 0) {
+    gameState.clockClicks = 1;
+    updateClockDisplay();
+    showMessage(storyText.start.clockFirst);
   } else {
-    showMessage(storyText.clues[clueId], { duration: 2800 });
+    gameState.clockClicks = 2;
+    if (clockDisplay) clockDisplay.textContent = "03:18";
+    setTimeout(() => { if (clockDisplay) clockDisplay.textContent = "03:17"; }, 900);
+    triggerAnomaly("clock-time");
+    showSequence(storyText.start.clockSecond, { interval: 2400, duration: 2300 });
   }
 }
 
-/* 是否集齐四条密码线索 */
-function hasAllClues() {
-  return CLUE_IDS.every((id) => gameState.discoveredClues.includes(id));
-}
-
-/* 获得道具（只能获得一次） */
-function collectItem(itemId) {
-  const item = itemConfig[itemId];
-  if (!item) return;
-  if (gameState.inventory.includes(itemId)) return;
-
-  gameState.inventory.push(itemId);
-  if (itemId === "old-ticket") gameState.hasKeyItem = true; // 兼容旧字段
-  updateInventory();
-  playItemSound();
-  showSequence(storyText.items[itemId], { interval: 2000, duration: 1900 });
-}
-
-/* true end 所需三件道具 + 三个小游戏 + 四条线索是否全部完成 */
-function hasAllTrueEndItems() {
-  return (
-    gameState.inventory.includes("old-ticket") &&
-    gameState.inventory.includes("orange-cap") &&
-    gameState.inventory.includes("wet-note") &&
-    gameState.completedMiniGames.includes("memoryMatch") &&
-    gameState.completedMiniGames.includes("vendingCode") &&
-    gameState.completedMiniGames.includes("noteArrange") &&
-    hasAllClues()
-  );
-}
-
-/* 更新左下角道具显示 */
-function updateInventory() {
-  if (!gameState.inventory.length) {
-    inventoryIndicator.classList.add("hidden");
-    inventoryIndicator.textContent = "";
-    return;
-  }
-  const parts = gameState.inventory.map((id) => (itemConfig[id] ? itemConfig[id].icon + " " + itemConfig[id].name : id));
-  inventoryIndicator.textContent = "道具：" + parts.join("　");
-  inventoryIndicator.classList.remove("hidden");
-}
-
-/* 更新左下角密码线索显示（未发现的显示 ?） */
-function updateCluesIndicator() {
-  const slots = ["?", "?", "?", "?"];
-  Object.values(CLUES).forEach((c) => {
-    if (gameState.discoveredClues.includes(c.id)) slots[c.position] = c.digit;
-  });
-  cluesIndicator.textContent = "密码线索：" + slots.join(" ");
-  cluesIndicator.classList.toggle("hidden", gameState.discoveredClues.length === 0);
-}
-
-/* ---------- 小游戏开关 ---------- */
-function openMiniGame(gameId) {
-  if (!MINI_GAMES[gameId]) return;
-  // vendingCode 必须要求线索齐全
-  if (gameId === "vendingCode" && !hasAllClues()) return;
-
-  activeMiniGame = gameId;
-  renderMiniGame(gameId);
-  miniGameOverlay.classList.remove("hidden");
-}
-
-function closeMiniGame() {
-  activeMiniGame = null;
-  miniGameOverlay.classList.add("hidden");
-  miniGameBody.innerHTML = "";
-}
-
-function completeMiniGame(gameId) {
-  if (!gameState.completedMiniGames.includes(gameId)) {
-    gameState.completedMiniGames.push(gameId);
-  }
-}
-
-function showMiniGameMessage(msg) {
-  miniGameMessage.textContent = msg;
-  miniGameMessage.classList.add("visible");
-}
-
-function renderMiniGame(gameId) {
-  const g = MINI_GAMES[gameId];
-  miniGameTitle.textContent = g.title;
-  miniGamePrompt.textContent = g.prompt;
-  miniGameMessage.textContent = "";
-  miniGameMessage.classList.remove("visible");
-
-  if (gameId === "memoryMatch") renderMemoryMatch();
-  else if (gameId === "vendingCode") renderVendingCode();
-  else if (gameId === "noteArrange") renderNoteArrange();
-}
-
-/* ---------- 小游戏：自动售货机密码（数字键盘输入） ---------- */
-function renderVendingCode() {
+/* 打开售货机密码输入 */
+function openPasswordEntry() {
+  passwordMode = true;
   vendingInput = "";
+  miniGameTitle.textContent = storyText.password.title;
+  miniGamePrompt.textContent = storyText.password.prompt;
+  miniGameMessage.textContent = "";
   miniGameBody.innerHTML = "";
 
   const display = document.createElement("div");
@@ -897,19 +825,21 @@ function renderVendingCode() {
     keypad.appendChild(btn);
   });
   miniGameBody.appendChild(keypad);
+
+  miniGameOverlay.classList.remove("hidden");
 }
 
 function handleVendingKey(k) {
   if (k === "清除") {
     vendingInput = "";
   } else if (k === "确认") {
-    if (vendingInput === gameState.vendingCode) {
-      completeMiniGame("vendingCode");
+    if (vendingInput === VENDING_CODE) {
+      gameState.passwordSolved = true;
       closeMiniGame();
-      collectItem("orange-cap");
+      openMiniGame("machineMemory");
       return;
     } else {
-      showMiniGameMessage(MINI_GAMES.vendingCode.wrong);
+      showMiniGameMessage(storyText.password.wrong);
       vendingInput = "";
     }
   } else {
@@ -923,172 +853,351 @@ function updateVendingDisplay() {
   if (display) display.textContent = (vendingInput + "____").slice(0, 4);
 }
 
-/* ---------- 小游戏：记忆翻牌 ---------- */
-function renderMemoryMatch() {
-  const g = MINI_GAMES.memoryMatch;
-  // 生成 3 对共 6 张牌并洗牌
-  const deck = [];
-  g.symbols.forEach((_, v) => { deck.push(v); deck.push(v); });
-  const order = shuffle(deck);
-  matchCards = order.map((v) => ({ value: v, matched: false }));
-  matchFlipped = [];
-  matchBusy = false;
+/* 渲染当前场景的彩蛋 */
+function renderEggs(sceneName) {
+  eggLayer.innerHTML = "";
+  Object.values(EASTER_EGGS).forEach((egg) => {
+    if (egg.scene !== sceneName) return;
+    const el = document.createElement("div");
+    el.className = "egg";
+    el.dataset.egg = egg.id;
+    el.style.left = egg.left;
+    el.style.top = egg.top;
+    el.title = egg.name;
 
-  miniGameBody.innerHTML = "";
-  const grid = document.createElement("div");
-  grid.className = "match-grid";
+    const icon = document.createElement("span");
+    icon.className = "egg-icon";
+    icon.textContent = egg.icon;
+    el.appendChild(icon);
 
-  matchCards.forEach((card, i) => {
-    const el = document.createElement("button");
-    el.type = "button";
-    el.className = "match-card";
-    el.dataset.index = i;
-    el.textContent = "?";
     el.addEventListener("click", (e) => {
       e.stopPropagation();
-      flipMatchCard(i);
+      if (activeMiniGame || passwordMode) return;
+      discoverEasterEgg(egg.id);
     });
-    grid.appendChild(el);
+    eggLayer.appendChild(el);
+  });
+}
+
+/* 发现彩蛋（只能一次，不增加 anomalyCount） */
+function discoverEasterEgg(eggId) {
+  const egg = EASTER_EGGS[eggId];
+  if (!egg) return;
+
+  if (gameState.discoveredEasterEggs.includes(eggId)) {
+    showMessage(storyText.easterEggs.known);
+    return;
+  }
+  gameState.discoveredEasterEggs.push(eggId);
+  updateEggIndicator();
+
+  if (gameState.discoveredEasterEggs.length === Object.keys(EASTER_EGGS).length) {
+    // 最后一个彩蛋：先显示该彩蛋文字，再显示集齐提示
+    showSequence([...egg.text, ...storyText.easterEggs.allFound], { interval: 2400, duration: 2300 });
+  } else {
+    showSequence(egg.text, { interval: 2400, duration: 2300 });
+  }
+}
+
+/* 更新左下角彩蛋计数 */
+function updateEggIndicator() {
+  if (!eggIndicator) return;
+  eggIndicator.textContent = "fragments: " + gameState.discoveredEasterEggs.length + " / " + Object.keys(EASTER_EGGS).length;
+}
+
+/* 获得道具（只能获得一次） */
+function collectItem(itemId) {
+  const item = itemConfig[itemId];
+  if (!item) return;
+  if (gameState.inventory.includes(itemId)) return;
+
+  gameState.inventory.push(itemId);
+  updateInventory();
+  playItemSound();
+  showSequence(storyText.items[itemId], { interval: 2000, duration: 1900 });
+}
+
+/* true end 条件：三道具 + 三小游戏 + 时钟两次 + 密码正确 */
+function hasAllTrueEndItems() {
+  return (
+    gameState.inventory.includes("wet-note") &&
+    gameState.inventory.includes("old-ticket") &&
+    gameState.inventory.includes("orange-cap") &&
+    gameState.completedMiniGames.includes("paperMaze") &&
+    gameState.completedMiniGames.includes("ticketOrder") &&
+    gameState.completedMiniGames.includes("machineMemory") &&
+    gameState.clockClicks >= 2 &&
+    gameState.passwordSolved
+  );
+}
+
+function updateInventory() {
+  if (!gameState.inventory.length) {
+    inventoryIndicator.classList.add("hidden");
+    inventoryIndicator.textContent = "";
+    return;
+  }
+  const parts = gameState.inventory.map((id) => (itemConfig[id] ? itemConfig[id].icon + " " + itemConfig[id].name : id));
+  inventoryIndicator.textContent = "道具：" + parts.join("　");
+  inventoryIndicator.classList.remove("hidden");
+}
+
+/* ============================================================
+   十一、小游戏系统
+   ============================================================ */
+
+function openMiniGame(gameId) {
+  if (!MINI_GAMES[gameId]) return;
+  // machineMemory 必须已正确输入密码
+  if (gameId === "machineMemory" && !gameState.passwordSolved) return;
+
+  activeMiniGame = gameId;
+  renderMiniGame(gameId);
+  miniGameOverlay.classList.remove("hidden");
+}
+
+function closeMiniGame() {
+  activeMiniGame = null;
+  passwordMode = false;
+  clearTimeout(machineTimer);
+  miniGameOverlay.classList.add("hidden");
+  miniGameBody.innerHTML = "";
+}
+
+function completeMiniGame(gameId) {
+  if (!gameState.completedMiniGames.includes(gameId)) {
+    gameState.completedMiniGames.push(gameId);
+  }
+}
+
+function showMiniGameMessage(msg) {
+  miniGameMessage.textContent = msg;
+  miniGameMessage.classList.add("visible");
+}
+
+function renderMiniGame(gameId) {
+  const g = MINI_GAMES[gameId];
+  miniGameTitle.textContent = g.title;
+  miniGamePrompt.textContent = g.prompt;
+  miniGameMessage.textContent = "";
+  miniGameMessage.classList.remove("visible");
+
+  if (gameId === "paperMaze") renderPaperMaze();
+  else if (gameId === "ticketOrder") renderTicketOrder();
+  else if (gameId === "machineMemory") renderMachineMemory();
+}
+
+/* ---------- 小游戏：迷宫（方向键 + 屏幕按钮） ---------- */
+function renderPaperMaze() {
+  mazePos = { r: 0, c: 0 };
+  miniGameBody.innerHTML = "";
+
+  const grid = document.createElement("div");
+  grid.className = "maze-grid";
+  MAZE.forEach((row, r) => {
+    row.forEach((cell, c) => {
+      const el = document.createElement("div");
+      el.className = "maze-cell";
+      if (cell === 1) el.classList.add("wall");
+      if (r === 0 && c === 0) el.classList.add("start");
+      if (r === MAZE.length - 1 && c === row.length - 1) el.classList.add("end");
+      el.dataset.r = r;
+      el.dataset.c = c;
+      grid.appendChild(el);
+    });
   });
   miniGameBody.appendChild(grid);
 
-  // 重新开始（不能跳过）
-  const restart = document.createElement("button");
-  restart.type = "button";
-  restart.className = "mini-restart";
-  restart.textContent = "重新开始";
-  restart.addEventListener("click", (e) => {
-    e.stopPropagation();
-    renderMemoryMatch();
+  const pad = document.createElement("div");
+  pad.className = "maze-pad";
+  const dirs = [["↑", -1, 0], ["←", 0, -1], ["→", 0, 1], ["↓", 1, 0]];
+  dirs.forEach(([label, dr, dc]) => {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "maze-btn";
+    btn.textContent = label;
+    btn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      moveMaze(dr, dc);
+    });
+    pad.appendChild(btn);
   });
-  miniGameBody.appendChild(restart);
+  miniGameBody.appendChild(pad);
+
+  updateMazeDot();
 }
 
-function flipMatchCard(i) {
-  if (matchBusy) return;
-  const card = matchCards[i];
-  if (card.matched) return;
-  if (matchFlipped.includes(i)) return;
-  if (matchFlipped.length >= 2) return;
+function moveMaze(dr, dc) {
+  const nr = mazePos.r + dr;
+  const nc = mazePos.c + dc;
+  if (nr < 0 || nc < 0 || nr >= MAZE.length || nc >= MAZE[0].length) {
+    showMiniGameMessage(MINI_GAMES.paperMaze.wrong);
+    return;
+  }
+  if (MAZE[nr][nc] === 1) {
+    showMiniGameMessage(MINI_GAMES.paperMaze.wrong);
+    return;
+  }
+  mazePos = { r: nr, c: nc };
+  updateMazeDot();
 
-  matchFlipped.push(i);
-  updateMatchCard(i);
-
-  if (matchFlipped.length === 2) {
-    const [a, b] = matchFlipped;
-    if (matchCards[a].value === matchCards[b].value) {
-      // 配对成功
-      matchCards[a].matched = true;
-      matchCards[b].matched = true;
-      matchFlipped = [];
-      updateMatchCard(a);
-      updateMatchCard(b);
-      if (matchCards.every((c) => c.matched)) {
-        completeMiniGame("memoryMatch");
-        closeMiniGame();
-        collectItem("old-ticket");
-      }
-    } else {
-      // 翻牌失败：翻回
-      matchBusy = true;
-      showMiniGameMessage(MINI_GAMES.memoryMatch.wrong);
-      setTimeout(() => {
-        matchFlipped = [];
-        matchBusy = false;
-        updateMatchCard(a);
-        updateMatchCard(b);
-      }, 700);
-    }
+  if (nr === MAZE.length - 1 && nc === MAZE[0].length - 1) {
+    completeMiniGame("paperMaze");
+    closeMiniGame();
+    collectItem("wet-note");
   }
 }
 
-function updateMatchCard(i) {
-  const el = miniGameBody.querySelector('.match-card[data-index="' + i + '"]');
-  if (!el) return;
-  const card = matchCards[i];
-  if (card.matched) {
-    el.classList.add("matched");
-    el.classList.remove("flipped");
-    el.textContent = MINI_GAMES.memoryMatch.symbols[card.value];
-  } else if (matchFlipped.includes(i)) {
-    el.classList.add("flipped");
-    el.classList.remove("matched");
-    el.textContent = MINI_GAMES.memoryMatch.symbols[card.value];
-  } else {
-    el.classList.remove("flipped", "matched");
-    el.textContent = "?";
-  }
+function updateMazeDot() {
+  miniGameBody.querySelectorAll(".maze-cell").forEach((el) => {
+    const r = parseInt(el.dataset.r, 10);
+    const c = parseInt(el.dataset.c, 10);
+    el.classList.toggle("player", r === mazePos.r && c === mazePos.c);
+  });
 }
 
-/* ---------- 小游戏：湿掉的寻人纸条（拖拽排序） ---------- */
-function renderNoteArrange() {
-  const g = MINI_GAMES.noteArrange;
-  noteOrder = shuffle([0, 1, 2, 3]);
-  dragIndex = null;
-
+/* ---------- 小游戏：记忆排序（点两张卡片交换） ---------- */
+function renderTicketOrder() {
+  const g = MINI_GAMES.ticketOrder;
+  ticketOrder = shuffle([0, 1, 2, 3]);
+  ticketSelected = null;
   miniGameBody.innerHTML = "";
-  const list = document.createElement("div");
-  list.className = "note-list";
 
-  noteOrder.forEach((origIndex, slot) => {
-    const el = document.createElement("div");
-    el.className = "note-card";
-    el.draggable = true;
+  const list = document.createElement("div");
+  list.className = "ticket-list";
+  ticketOrder.forEach((origIndex, slot) => {
+    const el = document.createElement("button");
+    el.type = "button";
+    el.className = "ticket-card";
     el.dataset.slot = slot;
     el.textContent = g.fragments[origIndex];
-
-    el.addEventListener("dragstart", (e) => {
-      dragIndex = slot;
-      e.dataTransfer.effectAllowed = "move";
-      try { e.dataTransfer.setData("text/plain", String(slot)); } catch (err) {}
-      el.classList.add("dragging");
+    el.addEventListener("click", (e) => {
+      e.stopPropagation();
+      selectTicketCard(slot);
     });
-    el.addEventListener("dragend", () => {
-      dragIndex = null;
-      list.querySelectorAll(".note-card").forEach((c) => c.classList.remove("dragging", "drag-over"));
-    });
-    el.addEventListener("dragover", (e) => {
-      e.preventDefault();
-      e.dataTransfer.dropEffect = "move";
-      el.classList.add("drag-over");
-    });
-    el.addEventListener("dragleave", () => {
-      el.classList.remove("drag-over");
-    });
-    el.addEventListener("drop", (e) => {
-      e.preventDefault();
-      el.classList.remove("drag-over");
-      const target = parseInt(el.dataset.slot, 10);
-      if (dragIndex === null || dragIndex === target) return;
-      // 交换两卡
-      [noteOrder[dragIndex], noteOrder[target]] = [noteOrder[target], noteOrder[dragIndex]];
-      dragIndex = null;
-      renderNoteArrange();
-    });
-
     list.appendChild(el);
   });
   miniGameBody.appendChild(list);
 
-  // 确认按钮
   const confirm = document.createElement("button");
   confirm.type = "button";
   confirm.className = "mini-confirm";
   confirm.textContent = "确认";
   confirm.addEventListener("click", (e) => {
     e.stopPropagation();
-    checkNoteArrange();
+    checkTicketOrder();
   });
   miniGameBody.appendChild(confirm);
+
+  updateTicketCards();
 }
 
-function checkNoteArrange() {
-  if (noteOrder.every((orig, slot) => orig === slot)) {
-    completeMiniGame("noteArrange");
-    closeMiniGame();
-    collectItem("wet-note");
+function selectTicketCard(slot) {
+  if (ticketSelected === null) {
+    ticketSelected = slot;
+  } else if (ticketSelected === slot) {
+    ticketSelected = null;
   } else {
-    showMiniGameMessage(MINI_GAMES.noteArrange.wrong);
+    [ticketOrder[ticketSelected], ticketOrder[slot]] = [ticketOrder[slot], ticketOrder[ticketSelected]];
+    ticketSelected = null;
+  }
+  updateTicketCards();
+}
+
+function updateTicketCards() {
+  miniGameBody.querySelectorAll(".ticket-card").forEach((el) => {
+    const slot = parseInt(el.dataset.slot, 10);
+    el.textContent = MINI_GAMES.ticketOrder.fragments[ticketOrder[slot]];
+    el.classList.toggle("selected", slot === ticketSelected);
+  });
+}
+
+function checkTicketOrder() {
+  if (ticketOrder.every((orig, slot) => orig === slot)) {
+    completeMiniGame("ticketOrder");
+    closeMiniGame();
+    collectItem("old-ticket");
+  } else {
+    showMiniGameMessage(MINI_GAMES.ticketOrder.wrong);
+  }
+}
+
+/* ---------- 小游戏：反应记忆（记符号顺序并重复） ---------- */
+function renderMachineMemory() {
+  const g = MINI_GAMES.machineMemory;
+  machineSequence = shuffle([0, 1, 2, 3]);
+  machineStep = 0;
+  machinePhase = "watch";
+  clearTimeout(machineTimer);
+
+  miniGameBody.innerHTML = "";
+  const grid = document.createElement("div");
+  grid.className = "machine-grid";
+  g.symbols.forEach((sym, i) => {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "machine-btn";
+    btn.dataset.index = i;
+    btn.textContent = sym;
+    btn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      handleMachineClick(i);
+    });
+    grid.appendChild(btn);
+  });
+  miniGameBody.appendChild(grid);
+
+  playMachineSequence();
+}
+
+function playMachineSequence() {
+  const n = machineSequence.length;
+  machineSequence.forEach((symIdx, step) => {
+    setTimeout(() => highlightMachineButton(symIdx), 600 * (step + 1));
+  });
+  setTimeout(() => {
+    clearMachineHighlights();
+    machineStep = 0;
+    machinePhase = "repeat";
+    startMachineTimer();
+  }, 600 * (n + 1));
+}
+
+function highlightMachineButton(idx) {
+  miniGameBody.querySelectorAll(".machine-btn").forEach((el) => {
+    el.classList.toggle("flash", parseInt(el.dataset.index, 10) === idx);
+  });
+}
+
+function clearMachineHighlights() {
+  miniGameBody.querySelectorAll(".machine-btn").forEach((el) => el.classList.remove("flash"));
+}
+
+function startMachineTimer() {
+  clearTimeout(machineTimer);
+  machineTimer = setTimeout(() => {
+    // 超时
+    showMiniGameMessage(MINI_GAMES.machineMemory.wrong);
+    renderMachineMemory();
+  }, 8000);
+}
+
+function handleMachineClick(idx) {
+  if (machinePhase !== "repeat") return;
+  if (machineStep >= machineSequence.length) return;
+
+  if (idx === machineSequence[machineStep]) {
+    machineStep++;
+    if (machineStep === machineSequence.length) {
+      clearTimeout(machineTimer);
+      completeMiniGame("machineMemory");
+      closeMiniGame();
+      collectItem("orange-cap");
+    }
+  } else {
+    clearTimeout(machineTimer);
+    showMiniGameMessage(MINI_GAMES.machineMemory.wrong);
+    renderMachineMemory();
   }
 }
 
@@ -1099,7 +1208,6 @@ function shuffle(arr) {
     const j = Math.floor(Math.random() * (i + 1));
     [a[i], a[j]] = [a[j], a[i]];
   }
-  // 避免排序类小游戏初始即为正确顺序
   if (a.length > 1 && a.every((v, i) => v === i)) {
     [a[0], a[1]] = [a[1], a[0]];
   }
@@ -1107,10 +1215,9 @@ function shuffle(arr) {
 }
 
 /* ============================================================
-   十一、结局流程
+   十二、结局流程
    ============================================================ */
 
-/* 判断结局（不改动判定逻辑，仅扩展 good 结局的 true end 分支） */
 function checkEnding() {
   if (gameState.gameOver || gameState.ending) return;
 
@@ -1156,7 +1263,6 @@ function checkEnding() {
   }
 }
 
-/* 开始结局序列 */
 function beginEndingSequence(steps) {
   endingSteps = steps;
   endingStepIndex = -1;
@@ -1171,7 +1277,6 @@ function beginEndingSequence(steps) {
   advanceEnding();
 }
 
-/* 渲染当前结局步骤 */
 function renderEndingStep() {
   const step = endingSteps[endingStepIndex];
   overlayText.classList.add("hidden");
@@ -1212,7 +1317,6 @@ function renderEndingStep() {
   }
 }
 
-/* 推进结局步骤 */
 function advanceEnding() {
   endingStepIndex++;
   if (endingStepIndex >= endingSteps.length) {
@@ -1222,13 +1326,11 @@ function advanceEnding() {
   renderEndingStep();
 }
 
-/* 游戏结束 */
 function setGameOver() {
   gameState.gameOver = true;
   gameOverBadge.classList.remove("hidden");
 }
 
-/* 返回上一场景 */
 function goBack() {
   if (gameState.gameOver) return;
   const scene = SCENES[gameState.currentScene];
@@ -1237,7 +1339,6 @@ function goBack() {
   }
 }
 
-/* 重新开始 */
 function restartGame() {
   gameState.currentScene = "start";
   gameState.previousScene = null;
@@ -1246,9 +1347,9 @@ function restartGame() {
   gameState.triggeredAnomalies = [];
   gameState.inventory = [];
   gameState.completedMiniGames = [];
-  gameState.discoveredClues = [];
-  gameState.vendingCode = "";
-  gameState.hasKeyItem = false;
+  gameState.clockClicks = 0;
+  gameState.passwordSolved = false;
+  gameState.discoveredEasterEggs = [];
   gameState.ending = null;
   gameState.gameOver = false;
 
@@ -1258,14 +1359,17 @@ function restartGame() {
   doorTriggered = false;
 
   activeMiniGame = null;
-  duckRevealed = false;
-  noteRevealed = false;
+  passwordMode = false;
   vendingInput = "";
-  matchCards = [];
-  matchFlipped = [];
-  matchBusy = false;
-  noteOrder = [];
-  dragIndex = null;
+  noteRevealed = false;
+  mazePos = { r: 0, c: 0 };
+  ticketOrder = [];
+  ticketSelected = null;
+  machineSequence = [];
+  machineStep = 0;
+  machinePhase = "watch";
+  clearTimeout(machineTimer);
+  machineTimer = null;
 
   overlay.classList.add("hidden");
   overlayText.classList.add("hidden");
@@ -1280,19 +1384,19 @@ function restartGame() {
   subtitle.classList.remove("visible");
   subtitleSub.classList.remove("visible");
   glitchTextEl.classList.remove("active");
-  closeMiniGame();
+  miniGameOverlay.classList.add("hidden");
+  miniGameBody.innerHTML = "";
 
   updateInventory();
-  updateCluesIndicator();
+  updateEggIndicator();
 
   enterScene("start");
 }
 
 /* ============================================================
-   十二、音频实现
+   十三、音频实现
    ============================================================ */
 
-/* 首次用户交互时初始化音频（满足浏览器自动播放策略） */
 function ensureAudio() {
   if (audio.ctx) {
     if (audio.ctx.state === "suspended") {
@@ -1310,7 +1414,6 @@ function ensureAudio() {
   updateSoundButton();
 }
 
-/* 搭建音频节点图 */
 function initMusicGraph() {
   const ctx = audio.ctx;
 
@@ -1347,7 +1450,6 @@ function initMusicGraph() {
   audio.musicBus.connect(audio.musicGain);
 }
 
-/* 生成混响脉冲响应（衰减噪声） */
 function createImpulse(ctx, duration, decay) {
   const rate = ctx.sampleRate;
   const length = Math.floor(rate * duration);
@@ -1361,7 +1463,6 @@ function createImpulse(ctx, duration, decay) {
   return impulse;
 }
 
-/* 开始背景音乐 */
 function startMusic() {
   if (!audio.ctx || audio.musicOn) return;
   audio.musicOn = true;
@@ -1372,7 +1473,6 @@ function startMusic() {
   scheduleCrackle();
 }
 
-/* 停止背景音乐 */
 function stopMusic() {
   audio.musicOn = false;
   clearTimeout(audio.padTimer);
@@ -1384,7 +1484,6 @@ function stopMusic() {
   audio.droneNodes = [];
 }
 
-/* 低频持续低鸣 */
 function startDrone() {
   const ctx = audio.ctx;
   [[55, 0.05], [110, 0.03]].forEach(([freq, gain]) => {
@@ -1401,7 +1500,6 @@ function startDrone() {
   });
 }
 
-/* 缓慢的垫底和弦 */
 function scheduleChord(index) {
   if (!audio.musicOn) return;
   const chord = CHORDS[index % CHORDS.length];
@@ -1442,7 +1540,6 @@ function playPad(chord) {
   });
 }
 
-/* 梦幻的琶音旋律 */
 function scheduleArp() {
   if (!audio.musicOn) return;
   const chord = audio.currentChord.length ? audio.currentChord : CHORDS[0];
@@ -1481,7 +1578,6 @@ function playBell(freq) {
   osc2.stop(t + 2.6);
 }
 
-/* 黑胶底噪（细微噼啪声） */
 function scheduleCrackle() {
   if (!audio.musicOn) return;
   if (Math.random() < 0.25) {
@@ -1515,7 +1611,6 @@ function playCracklePop() {
 
 /* ---------- 音效 ---------- */
 
-/* 通用振荡器音 */
 function playTone(opts = {}) {
   if (!audio.ctx) return;
   const ctx = audio.ctx;
@@ -1540,7 +1635,6 @@ function playTone(opts = {}) {
   osc.stop(t + duration + 0.05);
 }
 
-/* 通用噪声 */
 function playNoise(opts = {}) {
   if (!audio.ctx) return;
   const ctx = audio.ctx;
@@ -1568,37 +1662,31 @@ function playNoise(opts = {}) {
   src.start(t);
 }
 
-/* 按钮/UI 点击音 */
 function playClick() {
   playTone({ freq: 1600, type: "triangle", duration: 0.07, gain: 0.06 });
   playTone({ freq: 2400, type: "sine", duration: 0.04, gain: 0.03 });
 }
 
-/* 进入场景音 */
 function playNavSound() {
   playTone({ freq: 880, type: "sine", duration: 0.12, gain: 0.06 });
   playTone({ freq: 1320, type: "sine", duration: 0.1, gain: 0.04 });
 }
 
-/* 异常音（不和谐、滑落） */
 function playAnomalySound() {
   playTone({ freq: 300, type: "sawtooth", duration: 0.4, gain: 0.06, glideTo: 120 });
   playTone({ freq: 305, type: "square", duration: 0.35, gain: 0.03, glideTo: 125 });
   playNoise({ duration: 0.15, gain: 0.03, filterFreq: 800 });
 }
 
-/* 售货机提示音 */
 function playVendingBeep() {
   playTone({ freq: 200, type: "square", duration: 0.25, gain: 0.08 });
 }
 
-/* 获得道具音（上行双音） */
 function playItemSound() {
   playTone({ freq: 523.25, type: "sine", duration: 0.3, gain: 0.08 });
   setTimeout(() => playTone({ freq: 783.99, type: "sine", duration: 0.35, gain: 0.08 }), 120);
 }
 
-/* 声音开关 */
 function toggleSound() {
   ensureAudio();
   if (!audio.ctx) return;
@@ -1617,7 +1705,7 @@ function updateSoundButton() {
 }
 
 /* ============================================================
-   十三、事件绑定与初始化
+   十四、事件绑定与初始化
    ============================================================ */
 
 function init() {
@@ -1644,7 +1732,6 @@ function init() {
     document.body.classList.toggle("debug-mode");
   });
 
-  // 结局层：点击推进结局
   overlay.addEventListener("click", () => {
     if (gameState.ending && !gameState.gameOver) {
       playClick();
@@ -1652,25 +1739,37 @@ function init() {
     }
   });
 
-  // 小游戏弹层：阻止点击穿透；关闭按钮
   miniGameOverlay.addEventListener("click", (e) => e.stopPropagation());
   miniGameClose.addEventListener("click", (e) => {
     e.stopPropagation();
     closeMiniGame();
   });
 
-  // 首次交互时初始化音频（自动播放策略）
+  // 迷宫方向键
+  document.addEventListener("keydown", (e) => {
+    if (activeMiniGame !== "paperMaze") return;
+    const map = {
+      ArrowUp: [-1, 0],
+      ArrowDown: [1, 0],
+      ArrowLeft: [0, -1],
+      ArrowRight: [0, 1],
+    };
+    if (map[e.key]) {
+      e.preventDefault();
+      moveMaze(map[e.key][0], map[e.key][1]);
+    }
+  });
+
   document.addEventListener("pointerdown", function once() {
     ensureAudio();
     document.removeEventListener("pointerdown", once);
   });
 
-  // 阻止图片被拖拽
   sceneImage.addEventListener("dragstart", (e) => e.preventDefault());
   overlayImage.addEventListener("dragstart", (e) => e.preventDefault());
 
   updateInventory();
-  updateCluesIndicator();
+  updateEggIndicator();
   enterScene("start");
 }
 

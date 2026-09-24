@@ -203,8 +203,8 @@ body {
   max-width: 82%;
 }
 
-/* 左下角 HUD：已发现的密码线索 */
-#clues-indicator {
+/* 左下角 HUD：已发现彩蛋计数 */
+#egg-indicator {
   position: fixed;
   bottom: 16px;
   left: 16px;
@@ -216,6 +216,60 @@ body {
   font-size: 0.85rem;
   letter-spacing: 2px;
   max-width: 82%;
+}
+
+/* ---------- 开局时钟 ---------- */
+#clock-display {
+  position: absolute;
+  top: 3%;
+  left: 3%;
+  z-index: 5;
+  color: rgba(230, 230, 220, 0.75);
+  font-family: "Consolas", "Courier New", monospace;
+  font-size: clamp(0.9rem, 2.2vw, 1.3rem);
+  letter-spacing: 3px;
+  text-shadow: 0 0 6px rgba(0, 0, 0, 0.9);
+  pointer-events: none;
+}
+
+/* ---------- 彩蛋层与图标 ---------- */
+#egg-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 3;
+}
+
+.egg {
+  position: absolute;
+  width: 40px;
+  height: 40px;
+  transform: translate(-50%, -50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: auto;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: border-color 0.25s ease, box-shadow 0.25s ease;
+}
+
+.egg-icon {
+  font-size: 1.25rem;
+  line-height: 1;
+  opacity: 0.55;
+  filter: grayscale(0.9);
+  transition: opacity 0.25s ease, filter 0.25s ease;
+}
+
+.egg:hover .egg-icon {
+  opacity: 0.9;
+  filter: grayscale(0.3);
+}
+
+.egg:hover {
+  border-color: rgba(138, 154, 134, 0.45);
+  box-shadow: 0 0 0 1px rgba(138, 154, 134, 0.2);
 }
 
 #subtitle {
@@ -497,43 +551,57 @@ body {
   border-color: #8a9a86;
 }
 
-/* 记忆翻牌 */
-.match-grid {
+/* 迷宫 */
+.maze-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 10px;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+  margin-bottom: 14px;
 }
-.match-card {
+.maze-cell {
   aspect-ratio: 1 / 1;
+  background: #101410;
+}
+.maze-cell.wall {
+  background: #2c362c;
+}
+.maze-cell.start {
+  background: #1c2a1c;
+}
+.maze-cell.end {
+  background: #231a17;
+}
+.maze-cell.player {
+  background: #d9e0cf;
+  border-radius: 50%;
+  box-shadow: 0 0 8px 2px rgba(217, 224, 207, 0.7);
+}
+.maze-pad {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+}
+.maze-btn {
+  width: 48px;
+  padding: 12px 0;
   background: #161a16;
   border: 1px solid #4a584a;
   color: #ecebe0;
-  font-size: 1.7rem;
+  font-size: 1.1rem;
   cursor: pointer;
-  transition: background-color 0.15s ease, border-color 0.15s ease;
 }
-.match-card:hover {
+.maze-btn:hover {
   border-color: #8a9a86;
 }
-.match-card.flipped {
-  background: #1c221c;
-}
-.match-card.matched {
-  background: #23301f;
-  border-color: #7a8a72;
-  color: #cfe0c0;
-  cursor: default;
-  pointer-events: none;
-}
 
-/* 纸条拖拽 */
-.note-list {
+/* 记忆排序（点击交换） */
+.ticket-list {
   display: flex;
   flex-direction: column;
   gap: 8px;
   margin-bottom: 14px;
 }
-.note-card {
+.ticket-card {
   padding: 12px 14px;
   background: #141814;
   border: 1px solid #4a584a;
@@ -541,24 +609,44 @@ body {
   font-size: 1rem;
   letter-spacing: 1px;
   line-height: 1.5;
-  cursor: grab;
-  user-select: none;
-  -webkit-user-select: none;
+  cursor: pointer;
+  text-align: left;
 }
-.note-card:active {
-  cursor: grabbing;
-}
-.note-card.dragging {
-  opacity: 0.4;
-}
-.note-card.drag-over {
+.ticket-card:hover {
   border-color: #8a9a86;
+}
+.ticket-card.selected {
+  border-color: #c9d4be;
   background: #1c241c;
 }
 
-/* 小游戏内通用按钮（确认 / 重新开始） */
-.mini-confirm,
-.mini-restart {
+/* 反应记忆 */
+.machine-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  margin-bottom: 14px;
+}
+.machine-btn {
+  aspect-ratio: 1 / 1;
+  background: #161a16;
+  border: 1px solid #4a584a;
+  color: #ecebe0;
+  font-size: 1.6rem;
+  cursor: pointer;
+  transition: background-color 0.15s ease, box-shadow 0.15s ease;
+}
+.machine-btn:hover {
+  border-color: #8a9a86;
+}
+.machine-btn.flash {
+  background: #d9e0cf;
+  color: #101410;
+  box-shadow: 0 0 12px 2px rgba(217, 224, 207, 0.7);
+}
+
+/* 小游戏内通用按钮 */
+.mini-confirm {
   width: 100%;
   padding: 11px 0;
   background: #1c241c;
@@ -568,9 +656,24 @@ body {
   letter-spacing: 2px;
   cursor: pointer;
 }
-.mini-confirm:hover,
-.mini-restart:hover {
+.mini-confirm:hover {
   border-color: #8a9a86;
+}
+
+/* CRT 扫描线（轻微） */
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 100;
+  background: repeating-linear-gradient(
+    to bottom,
+    rgba(0, 0, 0, 0) 0px,
+    rgba(0, 0, 0, 0) 2px,
+    rgba(0, 0, 0, 0.08) 3px,
+    rgba(0, 0, 0, 0) 4px
+  );
 }
 
 .hidden {
