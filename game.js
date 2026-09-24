@@ -18,8 +18,59 @@ const IMAGE_PATHS = {
   normalEnding:    "Dreamcore场景/结局/出口普通结局.jpg",
 };
 
-/* ---------- 二、剧情文案（独立配置对象，便于修改） ---------- */
-const TEXT = {
+/* ---------- 二、配置对象：密码线索 / 道具 / 小游戏 ---------- */
+
+/* 密码线索（数字按密码 0317 的位置排列） */
+const CLUES = {
+  "clue-0": { id: "clue-0", digit: "0", position: 0 },
+  "clue-3": { id: "clue-3", digit: "3", position: 1 },
+  "clue-1": { id: "clue-1", digit: "1", position: 2 },
+  "clue-7": { id: "clue-7", digit: "7", position: 3 },
+};
+const CLUE_IDS = ["clue-0", "clue-3", "clue-1", "clue-7"];
+const VENDING_CODE = "0317";
+
+/* 道具 */
+const ITEMS = {
+  "old-ticket": { id: "old-ticket", name: "旧游乐园门票", icon: "🎫" },
+  "orange-cap":  { id: "orange-cap",  name: "橙色汽水瓶盖", icon: "🥤" },
+  "wet-note":    { id: "wet-note",    name: "湿掉的寻人纸条", icon: "📜" },
+};
+
+/* 小游戏 */
+const MINI_GAMES = {
+  vendingPuzzle: {
+    id: "vendingPuzzle",
+    title: "自动售货机密码",
+    prompt: "输入正确的密码",
+    wrong: "这个数字不属于今天。",
+    itemId: "orange-cap",
+  },
+  memoryPuzzle: {
+    id: "memoryPuzzle",
+    title: "记忆拼图",
+    prompt: "按那天的先后顺序，点击四段记忆。",
+    wrong: "记忆的顺序不对，再想一想。",
+    itemId: "old-ticket",
+    fragments: [
+      "进园时，天还没有黑。",
+      "售货机前，他说要喝橙色的汽水。",
+      "闭园广播响起来的时候，我松开了手。",
+      "再回头，他已经不在了。",
+    ],
+  },
+  notePuzzle: {
+    id: "notePuzzle",
+    title: "纸条复原",
+    prompt: "按正确顺序点击文字，还原这句话。",
+    wrong: "字迹还没有恢复。",
+    itemId: "wet-note",
+    fragments: ["如果你看到他，", "请告诉他", "我已经", "回家了。"],
+  },
+};
+
+/* ---------- 三、剧情文案（独立配置对象，便于修改） ---------- */
+const storyText = {
   // 精神降维后，各场景偶尔出现的碎语
   occasional: [
     "请不要再寻找不存在的人。",
@@ -37,12 +88,16 @@ const TEXT = {
     anomaly: "再点要散架了",
     anomalySub: "它和我一样，只是还没有承认自己坏了。",
     reenter: "刚才售货机里，真的有声音吗？",
+    refuse: ["售货机拒绝回应。", "你还不知道它在等待哪个时间。"],
+    solved: "售货机不再回应了。",
   },
 
   plasticBall: {
     click: "安全出口并不通往外面。",
     anomaly: "如果出口一直都在，为什么没有人离开？",
     reenter: "我记得它以前指向你。",
+    paperFirst: ["球下面压着一张纸。", "纸上的字已经被水浸开了。"],
+    paperDone: "球下面什么也没有了。",
   },
 
   playgroundSlide: {
@@ -53,8 +108,7 @@ const TEXT = {
   poolSlide: {
     slideAnomaly: "你游玩了一次滑梯，真是个贪玩的",
     slideSub: "你总是这样，假装只要再玩一次，事情就会变回原来的样子。",
-    ticketFirst: ["门票上有两个人的名字。", "现在只剩下一个。"],
-    ticketAgain: ["票根背面写着：闭园前请牵好身边的人。", "可是我没有牵住。"],
+    poolsideDone: "水面很平静。",
   },
 
   yellowDuck: {
@@ -75,6 +129,20 @@ const TEXT = {
     after: ["不是世界变了。", "是你终于发现，自己一直没有在世界里面。"],
   },
 
+  clues: {
+    "clue-0": "停在午夜之后。",
+    "clue-3": "牌子背面刻着：第三个数字。",
+    "clue-1": "水退去以后，地上留下了一个数字。",
+    "clue-7": "最后一个数字藏在闭园时间里。",
+    allFound: ["所有数字终于拼在了一起。", "0317——那天游乐园停止营业的时间。"],
+  },
+
+  items: {
+    "old-ticket": ["门票上有两个名字。", "其中一个被水泡开了。", "背面写着：闭园前请牵好身边的人。", "我当时没有牵住。"],
+    "orange-cap": ["售货机里没有汽水。", "只有一个被遗忘的瓶盖。", "那天他想喝橙色汽水。", "我说，离开的时候再买。"],
+    "wet-note": ["如果你看到他，请告诉他我已经回家了。", "落款的名字，是我的。"],
+  },
+
   endings: {
     bad: {
       pre: ["系统无法继续保存一个已经醒来的人。"],
@@ -86,8 +154,13 @@ const TEXT = {
       pre: ["你终于承认，那个人没有在等你。", "你也终于允许自己离开。"],
       english: "you had a dream of yesteryear,you woke up.",
       caption: ["有些人不是被遗忘后才消失。", "而是在被记住太久以后，终于可以离开。"],
-      trueEnd: "true end",
-      final: ["你醒来了。", "这一次，没有回头。"],
+      trueEntry: ["你已经想起了那一天。", "现在可以真正醒来了。"],
+      trueEnd1: ["你醒来了。", "窗外没有游乐园。", "手里也没有门票。"],
+      trueEnd2: ["你终于记起，那天不是他走丢了。", "是你先松开了手。"],
+      trueEnd3: ["记住不是为了回到过去。", "而是为了允许自己离开。"],
+      trueEndTitle: "true end",
+      incomplete: ["门开了，但你还没有想起全部事情。", "有些记忆已经找回，但故事仍然缺少最后一页。"],
+      incompleteFinal: ["你醒来了。", "但梦还没有真正结束。"],
     },
     normal: {
       pre: ["没有异常，没有出口，也没有需要解释的事情。", "这样就很好。"],
@@ -100,7 +173,7 @@ const TEXT = {
   imageError: "图片加载失败：",
 };
 
-/* ---------- 三、游戏状态 ---------- */
+/* ---------- 四、游戏状态 ---------- */
 const gameState = {
   currentScene: "start",
   previousScene: null,
@@ -108,12 +181,16 @@ const gameState = {
   anomalyCount: 0,
   anomalyLimit: 4,
   triggeredAnomalies: [],
+  inventory: [],
+  completedMiniGames: [],
+  discoveredClues: [],
+  vendingCode: "",
   hasKeyItem: false,
   ending: null,
   gameOver: false
 };
 
-/* ---------- 四、场景与热点（对象管理） ---------- */
+/* ---------- 五、场景与热点（对象管理） ---------- */
 /* 热点坐标：基于颜色分析 + 构图估算。
    可用右下角「显示热区」按钮在浏览器里核对位置，再回到这里微调。 */
 const SCENES = {
@@ -125,6 +202,7 @@ const SCENES = {
       { rect: { left: "5%", top: "32%", width: "27%", height: "55%" }, go: "vendingMachine" },
       { rect: { left: "36%", top: "32%", width: "27%", height: "55%" }, go: "plasticBall" },
       { rect: { left: "67%", top: "32%", width: "27%", height: "55%" }, go: "playgroundSlide" },
+      { rect: { left: "2%", top: "4%", width: "14%", height: "18%" }, action: "clock" },
     ],
   },
 
@@ -143,6 +221,7 @@ const SCENES = {
     back: "start",
     hotspots: [
       { rect: { left: "46%", top: "12%", width: "20%", height: "18%" }, action: "exit-sign" },
+      { rect: { left: "30%", top: "70%", width: "32%", height: "20%" }, action: "paper" },
     ],
   },
 
@@ -152,6 +231,7 @@ const SCENES = {
     back: "start",
     hotspots: [
       { rect: { left: "30%", top: "45%", width: "45%", height: "45%" }, action: "pool" },
+      { rect: { left: "6%", top: "74%", width: "20%", height: "16%" }, action: "water-mark" },
     ],
   },
 
@@ -162,7 +242,7 @@ const SCENES = {
     hotspots: [
       { rect: { left: "8%", top: "20%", width: "28%", height: "55%" }, action: "slide" },
       { rect: { left: "38%", top: "30%", width: "28%", height: "40%" }, go: "yellowDuck" },
-      { rect: { left: "72%", top: "25%", width: "22%", height: "50%" }, action: "key-item" },
+      { rect: { left: "72%", top: "25%", width: "22%", height: "50%" }, action: "poolside" },
     ],
   },
 
@@ -172,6 +252,7 @@ const SCENES = {
     back: "poolSlide",
     hotspots: [
       { rect: { left: "36%", top: "35%", width: "30%", height: "35%" }, action: "duck" },
+      { rect: { left: "2%", top: "2%", width: "18%", height: "18%" }, action: "clue-7-corner" },
     ],
   },
 
@@ -185,7 +266,7 @@ const SCENES = {
   },
 };
 
-/* ---------- 五、模块级运行时状态（不入 gameState） ---------- */
+/* ---------- 六、模块级运行时状态（不入 gameState） ---------- */
 let endingSteps = [];        // 结局步骤序列
 let endingStepIndex = -1;    // 当前结局步骤
 let mentalPromptShown = false; // 精神降维提示是否已显示
@@ -193,7 +274,17 @@ let messageTimer = null;     // 字幕自动隐藏计时器
 let doorTriggered = false;   // 出口门是否已点击
 let seqToken = 0;            // 字幕序列令牌（切换场景后中止旧序列）
 
-/* ---------- 六、音频系统（Web Audio 实时合成） ---------- */
+// 新增：小游戏与线索相关运行时状态
+let activeMiniGame = null;   // 当前打开的小游戏 id（null 表示关闭）
+let duckRevealed = false;    // 小黄鸭是否已点击过（用于揭示角落线索）
+let noteRevealed = false;    // 塑料球下的纸条是否已翻开
+let vendingInput = "";       // 售货机密码输入
+let memoryOrder = [];        // 记忆拼图当前乱序
+let memoryLocked = [];       // 记忆拼图已正确点击的槽位
+let noteOrder = [];          // 纸条复原当前乱序
+let noteLocked = [];         // 纸条复原已正确点击的槽位
+
+/* ---------- 七、音频系统（Web Audio 实时合成） ---------- */
 const audio = {
   ctx: null,
   master: null,
@@ -221,7 +312,7 @@ const CHORDS = [
   [98.00, 146.83, 246.94, 293.66, 440.00],  // Gsus2
 ];
 
-/* ---------- 七、DOM 引用 ---------- */
+/* ---------- 八、DOM 引用 ---------- */
 const $ = (id) => document.getElementById(id);
 const sceneContainer = $("scene-container");
 const sceneImage = $("scene-image");
@@ -230,7 +321,8 @@ const backButton = $("back-button");
 const restartButton = $("restart-button");
 const soundButton = $("sound-button");
 const debugButton = $("debug-button");
-const keyItemIndicator = $("key-item-indicator");
+const inventoryIndicator = $("inventory-indicator");
+const cluesIndicator = $("clues-indicator");
 const subtitle = $("subtitle");
 const subtitleSub = $("subtitle-sub");
 const overlay = $("overlay");
@@ -243,9 +335,15 @@ const dimOverlay = $("dim-overlay");
 const alertModal = $("alert-modal");
 const alertText = $("alert-text");
 const glitchTextEl = $("glitch-text");
+const miniGameOverlay = $("mini-game-overlay");
+const miniGameTitle = $("mini-game-title");
+const miniGamePrompt = $("mini-game-prompt");
+const miniGameBody = $("mini-game-body");
+const miniGameMessage = $("mini-game-message");
+const miniGameClose = $("mini-game-close");
 
 /* ============================================================
-   八、核心游戏逻辑
+   九、核心游戏逻辑
    ============================================================ */
 
 /* 进入场景 */
@@ -269,7 +367,7 @@ function renderScene() {
   sceneImage.src = scene.image;
   sceneImage.alt = scene.name;
   sceneImage.onerror = () => {
-    showMessage(TEXT.imageError + scene.image, { duration: 6000 });
+    showMessage(storyText.imageError + scene.image, { duration: 6000 });
   };
 
   // 淡入
@@ -286,7 +384,8 @@ function renderScene() {
     backButton.classList.add("hidden");
   }
 
-  updateKeyItemIndicator();
+  updateInventory();
+  updateCluesIndicator();
   updateShadowExtra();
 
   subtitle.classList.remove("visible");
@@ -309,6 +408,7 @@ function addHotspots(scene) {
 
     el.addEventListener("click", (e) => {
       e.stopPropagation();
+      if (activeMiniGame) return; // 小游戏打开时暂停普通场景热点
       if (gameState.gameOver) return;
 
       if (h.go) {
@@ -326,15 +426,29 @@ function addHotspots(scene) {
 /* 热点动作分发 */
 function handleAction(sceneName, action) {
   switch (action) {
-    case "vending":
-      if (gameState.triggeredAnomalies.includes("vending-machine")) break;
+    case "vending": {
+      // 已通关：不再回应
+      if (gameState.completedMiniGames.includes("vendingPuzzle")) {
+        showMessage(storyText.vendingMachine.solved);
+        break;
+      }
+      // 已触发异常：进入密码阶段
+      if (gameState.triggeredAnomalies.includes("vending-machine")) {
+        if (hasAllClues()) {
+          openMiniGame("vendingPuzzle");
+        } else {
+          showSequence(storyText.vendingMachine.refuse, { interval: 1700, duration: 1600 });
+        }
+        break;
+      }
+      // 首次点击：保留原有异常
       showSequence(
-        [TEXT.vendingMachine.click],
+        [storyText.vendingMachine.click],
         {
           interval: 1700,
           duration: 1600,
           onDone: () => {
-            if (triggerAnomaly("vending-machine", TEXT.vendingMachine.anomaly, { sub: TEXT.vendingMachine.anomalySub })) {
+            if (triggerAnomaly("vending-machine", storyText.vendingMachine.anomaly, { sub: storyText.vendingMachine.anomalySub })) {
               shakeScreen("hard");
               playVendingBeep();
             }
@@ -342,62 +456,100 @@ function handleAction(sceneName, action) {
         }
       );
       break;
+    }
 
-    case "exit-sign":
-      if (gameState.triggeredAnomalies.includes("exit-sign")) break;
+    case "exit-sign": {
+      // 已获得线索：不再响应
+      if (gameState.discoveredClues.includes("clue-3")) break;
+      // 第二次点击：获得线索
+      if (gameState.triggeredAnomalies.includes("exit-sign")) {
+        discoverClue("clue-3");
+        break;
+      }
+      // 第一次点击：异常
       shakeScreen("light");
       flashGlitchText("故障");
       showSequence(
-        [TEXT.plasticBall.click],
+        [storyText.plasticBall.click],
         {
           interval: 1700,
           duration: 1600,
           onDone: () => {
-            triggerAnomaly("exit-sign", TEXT.plasticBall.anomaly);
+            triggerAnomaly("exit-sign", storyText.plasticBall.anomaly);
           },
         }
       );
       break;
+    }
 
     case "pool":
       playNavSound();
       showSequence(
-        [TEXT.playgroundSlide.pool],
+        [storyText.playgroundSlide.pool],
         { interval: 1900, duration: 1800, onDone: () => enterScene("poolSlide") }
       );
       break;
 
     case "slide":
-      if (triggerAnomaly("pool-slide", TEXT.poolSlide.slideAnomaly, { sub: TEXT.poolSlide.slideSub })) {
+      if (triggerAnomaly("pool-slide", storyText.poolSlide.slideAnomaly, { sub: storyText.poolSlide.slideSub })) {
         shakeScreen("light");
         playAnomalySound();
       }
       break;
 
-    case "key-item":
-      if (!gameState.hasKeyItem) {
-        gameState.hasKeyItem = true;
-        updateKeyItemIndicator();
-        playItemSound();
-        showSequence(TEXT.poolSlide.ticketFirst, { interval: 2000, duration: 1900 });
-      } else {
-        showSequence(TEXT.poolSlide.ticketAgain, { interval: 2000, duration: 1900 });
+    case "poolside":
+      if (gameState.completedMiniGames.includes("memoryPuzzle")) {
+        showMessage(storyText.poolSlide.poolsideDone);
+        break;
       }
+      openMiniGame("memoryPuzzle");
+      break;
+
+    case "paper":
+      if (gameState.completedMiniGames.includes("notePuzzle")) {
+        showMessage(storyText.plasticBall.paperDone);
+        break;
+      }
+      if (!noteRevealed) {
+        noteRevealed = true;
+        showSequence(storyText.plasticBall.paperFirst, { interval: 2000, duration: 1900 });
+      } else {
+        openMiniGame("notePuzzle");
+      }
+      break;
+
+    case "clock":
+      playClick();
+      discoverClue("clue-0");
+      break;
+
+    case "water-mark":
+      playClick();
+      discoverClue("clue-1");
       break;
 
     case "duck":
       playNavSound();
-      showSequence(
-        TEXT.yellowDuck.duck,
-        { interval: 1500, duration: 1400, onDone: () => enterScene("exit") }
-      );
+      if (duckRevealed) {
+        enterScene("exit");
+      } else {
+        duckRevealed = true;
+        showSequence(storyText.yellowDuck.duck, { interval: 1500, duration: 1400 });
+      }
+      break;
+
+    case "clue-7-corner":
+      if (!duckRevealed) break; // 未点过小黄鸭，角落无反应
+      discoverClue("clue-7");
       break;
 
     case "door":
       if (doorTriggered || gameState.ending) break;
       doorTriggered = true;
       playClick();
-      const doorLines = gameState.hasKeyItem ? TEXT.exit.doorWithKey : TEXT.exit.doorWithoutKey;
+      const doorLines = gameState.inventory.includes("old-ticket")
+        ? storyText.exit.doorWithKey
+        : storyText.exit.doorWithoutKey;
       showSequence(
         doorLines,
         { interval: 2000, duration: 1900, onDone: checkEnding }
@@ -416,35 +568,35 @@ function onSceneEnter(sceneName) {
   switch (sceneName) {
     case "start":
       if (visits === 1) {
-        showSequence(TEXT.start.first, { interval: 2600, duration: 2500 });
+        showSequence(storyText.start.first, { interval: 2600, duration: 2500 });
       } else if (visits >= 2) {
-        triggerAnomaly("start-revisit", TEXT.start.revisit, { count: false });
+        triggerAnomaly("start-revisit", storyText.start.revisit, { count: false });
       }
       break;
 
     case "vendingMachine":
       if (visits >= 2) {
-        showMessage(TEXT.vendingMachine.reenter);
+        showMessage(storyText.vendingMachine.reenter);
       }
       break;
 
     case "plasticBall":
       if (visits >= 2) {
-        showMessage(TEXT.plasticBall.reenter, { duration: 1800 });
+        showMessage(storyText.plasticBall.reenter, { duration: 1800 });
       }
       break;
 
     case "playgroundSlide":
-      if (visits >= 2 && triggerAnomaly("playground-slide", TEXT.playgroundSlide.anomaly)) {
+      if (visits >= 2 && triggerAnomaly("playground-slide", storyText.playgroundSlide.anomaly)) {
         playAnomalySound();
       }
       break;
 
     case "yellowDuck":
       if (visits === 1) {
-        showMessage(TEXT.yellowDuck.first);
+        showMessage(storyText.yellowDuck.first);
       } else if (visits >= 2) {
-        if (triggerAnomaly("yellow-duck", TEXT.yellowDuck.anomaly, { sub: TEXT.yellowDuck.anomalySub })) {
+        if (triggerAnomaly("yellow-duck", storyText.yellowDuck.anomaly, { sub: storyText.yellowDuck.anomalySub })) {
           playAnomalySound();
         }
         triggerExtraShadow();
@@ -453,7 +605,7 @@ function onSceneEnter(sceneName) {
 
     case "exit":
       if (visits === 1) {
-        showSequence(TEXT.exit.enter, { interval: 2400, duration: 2300 });
+        showSequence(storyText.exit.enter, { interval: 2400, duration: 2300 });
       }
       break;
 
@@ -541,7 +693,7 @@ function maybeOccasionalLine() {
   if (!mentalPromptShown) return;
   if (Math.random() > 0.22) return;
   const sceneAtCall = gameState.currentScene;
-  const line = TEXT.occasional[Math.floor(Math.random() * TEXT.occasional.length)];
+  const line = storyText.occasional[Math.floor(Math.random() * storyText.occasional.length)];
   setTimeout(() => {
     if (gameState.currentScene === sceneAtCall && !gameState.gameOver) {
       showMessage(line, { duration: 2200 });
@@ -575,7 +727,7 @@ function maybeMentalDegradation() {
   if (gameState.anomalyCount !== gameState.anomalyLimit) return;
 
   mentalPromptShown = true;
-  alertText.textContent = TEXT.mental.alert;
+  alertText.textContent = storyText.mental.alert;
   alertModal.classList.remove("hidden");
   dimOverlay.classList.remove("hidden");
   $("game").classList.add("glitching");
@@ -584,7 +736,7 @@ function maybeMentalDegradation() {
     alertModal.classList.add("hidden");
     dimOverlay.classList.add("hidden");
     $("game").classList.remove("glitching");
-    showSequence(TEXT.mental.after, { interval: 2200, duration: 2100 });
+    showSequence(storyText.mental.after, { interval: 2200, duration: 2100 });
   }, 2600);
 }
 
@@ -604,20 +756,269 @@ function updateShadowExtra() {
   }
 }
 
-/* 更新关键道具提示 */
-function updateKeyItemIndicator() {
-  if (gameState.hasKeyItem) {
-    keyItemIndicator.classList.remove("hidden");
+/* ============================================================
+   十、密码线索 / 道具 / 小游戏系统
+   ============================================================ */
+
+/* 发现一条密码线索（同一线索只能获得一次，不增加 anomalyCount） */
+function discoverClue(clueId) {
+  const clue = CLUES[clueId];
+  if (!clue) return;
+  if (gameState.discoveredClues.includes(clueId)) return;
+
+  gameState.discoveredClues.push(clueId);
+  updateCluesIndicator();
+
+  if (hasAllClues()) {
+    gameState.vendingCode = VENDING_CODE;
+    showSequence(
+      [storyText.clues[clueId], ...storyText.clues.allFound],
+      { interval: 2400, duration: 2300 }
+    );
   } else {
-    keyItemIndicator.classList.add("hidden");
+    showMessage(storyText.clues[clueId], { duration: 2800 });
   }
 }
 
-/* 判断结局（不改动判定逻辑） */
+/* 是否集齐四条密码线索 */
+function hasAllClues() {
+  return CLUE_IDS.every((id) => gameState.discoveredClues.includes(id));
+}
+
+/* 获得道具（只能获得一次） */
+function collectItem(itemId) {
+  const item = ITEMS[itemId];
+  if (!item) return;
+  if (gameState.inventory.includes(itemId)) return;
+
+  gameState.inventory.push(itemId);
+  if (itemId === "old-ticket") gameState.hasKeyItem = true; // 兼容旧字段
+  updateInventory();
+  playItemSound();
+  showSequence(storyText.items[itemId], { interval: 2000, duration: 1900 });
+}
+
+/* true end 所需三件道具 + 三个小游戏是否全部完成 */
+function hasAllTrueEndItems() {
+  return (
+    gameState.inventory.includes("old-ticket") &&
+    gameState.inventory.includes("orange-cap") &&
+    gameState.inventory.includes("wet-note") &&
+    gameState.completedMiniGames.includes("memoryPuzzle") &&
+    gameState.completedMiniGames.includes("vendingPuzzle") &&
+    gameState.completedMiniGames.includes("notePuzzle")
+  );
+}
+
+/* 更新左下角道具显示 */
+function updateInventory() {
+  if (!gameState.inventory.length) {
+    inventoryIndicator.classList.add("hidden");
+    inventoryIndicator.textContent = "";
+    return;
+  }
+  const parts = gameState.inventory.map((id) => (ITEMS[id] ? ITEMS[id].icon + " " + ITEMS[id].name : id));
+  inventoryIndicator.textContent = "道具：" + parts.join("　");
+  inventoryIndicator.classList.remove("hidden");
+}
+
+/* 更新左下角密码线索显示（未发现的显示 ?） */
+function updateCluesIndicator() {
+  const slots = ["?", "?", "?", "?"];
+  Object.values(CLUES).forEach((c) => {
+    if (gameState.discoveredClues.includes(c.id)) slots[c.position] = c.digit;
+  });
+  cluesIndicator.textContent = "密码线索：" + slots.join(" ");
+  cluesIndicator.classList.toggle("hidden", gameState.discoveredClues.length === 0);
+}
+
+/* ---------- 小游戏开关 ---------- */
+function openMiniGame(gameId) {
+  if (!MINI_GAMES[gameId]) return;
+  // vendingPuzzle 必须要求线索齐全
+  if (gameId === "vendingPuzzle" && !hasAllClues()) return;
+
+  activeMiniGame = gameId;
+  renderMiniGame(gameId);
+  miniGameOverlay.classList.remove("hidden");
+}
+
+function closeMiniGame() {
+  activeMiniGame = null;
+  miniGameOverlay.classList.add("hidden");
+  miniGameBody.innerHTML = "";
+}
+
+function completeMiniGame(gameId) {
+  if (!gameState.completedMiniGames.includes(gameId)) {
+    gameState.completedMiniGames.push(gameId);
+  }
+}
+
+function failMiniGame(gameId) {
+  const g = MINI_GAMES[gameId];
+  if (!g) return;
+  showMiniGameMessage(g.wrong);
+  if (gameId === "memoryPuzzle") resetMemoryPuzzle();
+  else if (gameId === "notePuzzle") resetNotePuzzle();
+  renderOrderPuzzle();
+}
+
+function showMiniGameMessage(msg) {
+  miniGameMessage.textContent = msg;
+  miniGameMessage.classList.add("visible");
+}
+
+function renderMiniGame(gameId) {
+  const g = MINI_GAMES[gameId];
+  miniGameTitle.textContent = g.title;
+  miniGamePrompt.textContent = g.prompt;
+  miniGameMessage.textContent = "";
+  miniGameMessage.classList.remove("visible");
+
+  if (gameId === "vendingPuzzle") {
+    renderVendingPuzzle();
+  } else {
+    if (gameId === "memoryPuzzle") resetMemoryPuzzle();
+    else resetNotePuzzle();
+    renderOrderPuzzle();
+  }
+}
+
+/* ---------- 小游戏：自动售货机密码 ---------- */
+function renderVendingPuzzle() {
+  vendingInput = "";
+  miniGameBody.innerHTML = "";
+
+  const display = document.createElement("div");
+  display.className = "vending-display";
+  display.id = "vending-display";
+  miniGameBody.appendChild(display);
+  updateVendingDisplay();
+
+  const keypad = document.createElement("div");
+  keypad.className = "vending-keypad";
+  const keys = [1, 2, 3, 4, 5, 6, 7, 8, 9, "清除", 0, "确认"];
+  keys.forEach((k) => {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "vending-key";
+    btn.textContent = k;
+    btn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      handleVendingKey(k);
+    });
+    keypad.appendChild(btn);
+  });
+  miniGameBody.appendChild(keypad);
+}
+
+function handleVendingKey(k) {
+  if (k === "清除") {
+    vendingInput = "";
+  } else if (k === "确认") {
+    if (vendingInput === gameState.vendingCode) {
+      completeMiniGame("vendingPuzzle");
+      closeMiniGame();
+      collectItem("orange-cap");
+      return;
+    } else {
+      showMiniGameMessage(MINI_GAMES.vendingPuzzle.wrong);
+      vendingInput = "";
+    }
+  } else {
+    if (vendingInput.length < 4) vendingInput += String(k);
+  }
+  updateVendingDisplay();
+}
+
+function updateVendingDisplay() {
+  const display = document.getElementById("vending-display");
+  if (display) display.textContent = (vendingInput + "____").slice(0, 4);
+}
+
+/* ---------- 小游戏：记忆拼图 / 纸条复原（排序类） ---------- */
+function renderOrderPuzzle() {
+  const gameId = activeMiniGame;
+  const g = MINI_GAMES[gameId];
+  const order = gameId === "memoryPuzzle" ? memoryOrder : noteOrder;
+  const locked = gameId === "memoryPuzzle" ? memoryLocked : noteLocked;
+
+  miniGameBody.innerHTML = "";
+  const list = document.createElement("div");
+  list.className = "order-puzzle";
+
+  order.forEach((origIndex, slot) => {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "fragment";
+    if (locked.includes(slot)) btn.classList.add("locked");
+    btn.textContent = g.fragments[origIndex];
+    btn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      handleOrderClick(gameId, slot);
+    });
+    list.appendChild(btn);
+  });
+
+  miniGameBody.appendChild(list);
+}
+
+function handleOrderClick(gameId, slot) {
+  const g = MINI_GAMES[gameId];
+  const order = gameId === "memoryPuzzle" ? memoryOrder : noteOrder;
+  const locked = gameId === "memoryPuzzle" ? memoryLocked : noteLocked;
+
+  if (locked.includes(slot)) return; // 已锁定的槽位不能再点
+
+  if (order[slot] === locked.length) {
+    // 点击的顺序正确：锁定该槽位
+    locked.push(slot);
+    if (locked.length === order.length) {
+      completeMiniGame(gameId);
+      closeMiniGame();
+      collectItem(g.itemId);
+    } else {
+      renderOrderPuzzle();
+    }
+  } else {
+    failMiniGame(gameId);
+  }
+}
+
+function resetMemoryPuzzle() {
+  memoryLocked = [];
+  memoryOrder = shuffledIndices(MINI_GAMES.memoryPuzzle.fragments.length);
+}
+
+function resetNotePuzzle() {
+  noteLocked = [];
+  noteOrder = shuffledIndices(MINI_GAMES.notePuzzle.fragments.length);
+}
+
+function shuffledIndices(n) {
+  const arr = [];
+  for (let i = 0; i < n; i++) arr.push(i);
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  // 避免初始即为正确顺序
+  if (n > 1 && arr.every((v, i) => v === i)) {
+    [arr[0], arr[1]] = [arr[1], arr[0]];
+  }
+  return arr;
+}
+
+/* ============================================================
+   十一、结局流程
+   ============================================================ */
+
+/* 判断结局（不改动判定逻辑，仅扩展 good 结局的 true end 分支） */
 function checkEnding() {
   if (gameState.gameOver || gameState.ending) return;
 
-  const E = TEXT.endings;
+  const E = storyText.endings;
 
   if (gameState.anomalyCount >= gameState.anomalyLimit) {
     gameState.ending = "bad";
@@ -627,14 +1028,27 @@ function checkEnding() {
       { type: "image", image: IMAGE_PATHS.badEnding, caption: E.bad.caption },
       { type: "final", lines: E.bad.final },
     ]);
-  } else if (gameState.hasKeyItem) {
+  } else if (gameState.inventory.includes("old-ticket")) {
     gameState.ending = "good";
-    beginEndingSequence([
+    const steps = [
       { type: "text", lines: E.good.pre },
       { type: "text", lines: [E.good.english], english: true },
       { type: "image", image: IMAGE_PATHS.goodEnding, caption: E.good.caption },
-      { type: "final", title: E.good.trueEnd, lines: E.good.final },
-    ]);
+    ];
+    if (hasAllTrueEndItems()) {
+      steps.push(
+        { type: "text", lines: E.good.trueEntry },
+        { type: "text", lines: E.good.trueEnd1 },
+        { type: "text", lines: E.good.trueEnd2 },
+        { type: "final", title: E.good.trueEndTitle, lines: E.good.trueEnd3 }
+      );
+    } else {
+      steps.push(
+        { type: "text", lines: E.good.incomplete },
+        { type: "final", lines: E.good.incompleteFinal }
+      );
+    }
+    beginEndingSequence(steps);
   } else {
     gameState.ending = "normal";
     beginEndingSequence([
@@ -676,7 +1090,7 @@ function renderEndingStep() {
   } else if (step.type === "image") {
     overlayImage.src = step.image;
     overlayImage.onerror = () => {
-      overlayText.textContent = TEXT.imageError + step.image;
+      overlayText.textContent = storyText.imageError + step.image;
       overlayText.classList.remove("hidden");
       overlayImage.classList.add("hidden");
     };
@@ -734,6 +1148,10 @@ function restartGame() {
   gameState.visitCount = {};
   gameState.anomalyCount = 0;
   gameState.triggeredAnomalies = [];
+  gameState.inventory = [];
+  gameState.completedMiniGames = [];
+  gameState.discoveredClues = [];
+  gameState.vendingCode = "";
   gameState.hasKeyItem = false;
   gameState.ending = null;
   gameState.gameOver = false;
@@ -742,6 +1160,15 @@ function restartGame() {
   endingStepIndex = -1;
   mentalPromptShown = false;
   doorTriggered = false;
+
+  activeMiniGame = null;
+  duckRevealed = false;
+  noteRevealed = false;
+  vendingInput = "";
+  memoryLocked = [];
+  memoryOrder = [];
+  noteLocked = [];
+  noteOrder = [];
 
   overlay.classList.add("hidden");
   overlayText.classList.add("hidden");
@@ -756,12 +1183,16 @@ function restartGame() {
   subtitle.classList.remove("visible");
   subtitleSub.classList.remove("visible");
   glitchTextEl.classList.remove("active");
+  closeMiniGame();
+
+  updateInventory();
+  updateCluesIndicator();
 
   enterScene("start");
 }
 
 /* ============================================================
-   九、音频实现
+   十二、音频实现
    ============================================================ */
 
 /* 首次用户交互时初始化音频（满足浏览器自动播放策略） */
@@ -1089,7 +1520,7 @@ function updateSoundButton() {
 }
 
 /* ============================================================
-   十、事件绑定与初始化
+   十三、事件绑定与初始化
    ============================================================ */
 
 function init() {
@@ -1124,6 +1555,13 @@ function init() {
     }
   });
 
+  // 小游戏弹层：阻止点击穿透；关闭按钮
+  miniGameOverlay.addEventListener("click", (e) => e.stopPropagation());
+  miniGameClose.addEventListener("click", (e) => {
+    e.stopPropagation();
+    closeMiniGame();
+  });
+
   // 首次交互时初始化音频（自动播放策略）
   document.addEventListener("pointerdown", function once() {
     ensureAudio();
@@ -1134,6 +1572,8 @@ function init() {
   sceneImage.addEventListener("dragstart", (e) => e.preventDefault());
   overlayImage.addEventListener("dragstart", (e) => e.preventDefault());
 
+  updateInventory();
+  updateCluesIndicator();
   enterScene("start");
 }
 
