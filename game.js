@@ -229,9 +229,9 @@ const SCENES = {
     image: IMAGE_PATHS.start,
     back: null,
     hotspots: [
-      { rect: { left: "5%", top: "32%", width: "27%", height: "55%" }, go: "vendingMachine" },
-      { rect: { left: "36%", top: "32%", width: "27%", height: "55%" }, go: "plasticBall" },
-      { rect: { left: "67%", top: "32%", width: "27%", height: "55%" }, go: "playgroundSlide" },
+      { rect: { left: "7%", top: "46%", width: "16%", height: "12%" }, go: "vendingMachine" },
+      { rect: { left: "29%", top: "46%", width: "16%", height: "12%" }, go: "plasticBall" },
+      { rect: { left: "52%", top: "46%", width: "16%", height: "12%" }, go: "playgroundSlide" },
       { rect: { left: "2%", top: "4%", width: "14%", height: "18%" }, action: "clock" },
     ],
   },
