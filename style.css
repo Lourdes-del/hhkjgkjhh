@@ -1,0 +1,386 @@
+/* ============================================================
+   梦核游乐园 · 点击探索 —— 样式表
+   ============================================================ */
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  background: #000;
+  color: #eee;
+  font-family: "Microsoft YaHei", "PingFang SC", "Noto Sans SC", sans-serif;
+  min-height: 100vh;
+  overflow-x: hidden;
+  user-select: none;
+}
+
+#game {
+  position: relative;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 64px 16px 96px;
+}
+
+/* ---------- 场景容器 ---------- */
+#scene-container {
+  position: relative;
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  opacity: 0;
+  transition: opacity 0.6s ease;
+}
+#scene-container.visible {
+  opacity: 1;
+}
+
+#scene-image {
+  display: block;
+  width: 100%;
+  height: auto;
+  -webkit-user-drag: none;
+}
+
+/* 热点层：覆盖在图片上，本身不拦截点击 */
+#hotspot-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+/* 透明热点 */
+.hotspot {
+  position: absolute;
+  cursor: pointer;
+  pointer-events: auto;
+  border: 1px solid transparent;
+  transition: border-color 0.2s ease, background-color 0.2s ease;
+}
+.hotspot:hover {
+  border-color: rgba(255, 255, 255, 0.55);
+  background-color: rgba(255, 255, 255, 0.06);
+}
+
+/* 池核小黄鸭：角落「多出来的影子」 */
+#shadow-extra {
+  position: absolute;
+  bottom: 8%;
+  right: 6%;
+  color: rgba(205, 205, 215, 0.55);
+  font-size: 0.9rem;
+  letter-spacing: 3px;
+  text-shadow: 0 0 5px rgba(0, 0, 0, 0.85);
+  pointer-events: none;
+}
+
+/* 故障文字（exit-sign 等） */
+#glitch-text {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: #f33;
+  font-size: 2rem;
+  letter-spacing: 4px;
+  opacity: 0;
+  pointer-events: none;
+}
+#glitch-text.active {
+  animation: glitchText 0.8s steps(2) infinite;
+}
+
+/* ---------- 按钮 / 提示 / 字幕 ---------- */
+#back-button {
+  position: fixed;
+  top: 16px;
+  left: 16px;
+  z-index: 10;
+  background: rgba(20, 20, 20, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  color: #ddd;
+  padding: 8px 16px;
+  cursor: pointer;
+  font-size: 0.95rem;
+  letter-spacing: 1px;
+  transition: background-color 0.2s ease;
+}
+#back-button:hover {
+  background: rgba(60, 60, 60, 0.8);
+}
+
+#restart-button {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  z-index: 20;
+  background: rgba(20, 20, 20, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  color: #ddd;
+  padding: 8px 16px;
+  cursor: pointer;
+  font-size: 0.95rem;
+  letter-spacing: 1px;
+  transition: background-color 0.2s ease;
+}
+#restart-button:hover {
+  background: rgba(60, 60, 60, 0.8);
+}
+
+#sound-button {
+  position: fixed;
+  top: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 20;
+  background: rgba(20, 20, 20, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  color: #ddd;
+  padding: 8px 16px;
+  cursor: pointer;
+  font-size: 0.95rem;
+  letter-spacing: 1px;
+  transition: background-color 0.2s ease;
+}
+#sound-button:hover {
+  background: rgba(60, 60, 60, 0.8);
+}
+
+#debug-button {
+  position: fixed;
+  bottom: 16px;
+  right: 16px;
+  z-index: 20;
+  background: rgba(20, 20, 20, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  color: #ddd;
+  padding: 8px 16px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  letter-spacing: 1px;
+  transition: background-color 0.2s ease;
+}
+#debug-button:hover {
+  background: rgba(60, 60, 60, 0.8);
+}
+
+/* 调试模式：显示热点矩形 */
+.debug-mode .hotspot {
+  border: 2px dashed #0ff;
+  background: rgba(0, 255, 255, 0.12);
+}
+.debug-mode .hotspot::after {
+  content: attr(data-label);
+  position: absolute;
+  top: 0;
+  left: 0;
+  background: rgba(0, 255, 255, 0.9);
+  color: #000;
+  font-size: 11px;
+  line-height: 1;
+  padding: 2px 5px;
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+#key-item-indicator {
+  position: fixed;
+  bottom: 16px;
+  left: 16px;
+  z-index: 10;
+  padding: 6px 12px;
+  background: rgba(40, 30, 5, 0.6);
+  border: 1px solid rgba(255, 205, 90, 0.45);
+  color: #ffd97a;
+  font-size: 0.9rem;
+  letter-spacing: 1px;
+}
+
+#subtitle {
+  position: fixed;
+  bottom: 28px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10;
+  max-width: 80%;
+  text-align: center;
+  color: #eee;
+  font-size: 1.15rem;
+  letter-spacing: 2px;
+  line-height: 1.6;
+  opacity: 0;
+  transition: opacity 0.4s ease;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
+  pointer-events: none;
+}
+#subtitle.visible {
+  opacity: 1;
+}
+
+#subtitle-sub {
+  position: fixed;
+  bottom: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10;
+  max-width: 80%;
+  text-align: center;
+  color: #b9b9b9;
+  font-size: 0.9rem;
+  letter-spacing: 1px;
+  line-height: 1.5;
+  opacity: 0;
+  transition: opacity 0.4s ease;
+  pointer-events: none;
+}
+#subtitle-sub.visible {
+  opacity: 1;
+}
+
+#game-over-badge {
+  position: fixed;
+  left: 50%;
+  bottom: 18%;
+  transform: translateX(-50%);
+  z-index: 25;
+  color: #fff;
+  font-size: 1.5rem;
+  letter-spacing: 8px;
+  padding: 12px 30px;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  background: rgba(0, 0, 0, 0.72);
+  pointer-events: none;
+}
+
+/* ---------- 结局全屏层 ---------- */
+#overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 15;
+  background: #000;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  padding: 24px;
+  cursor: pointer;
+}
+#overlay-text {
+  color: #eee;
+  font-size: clamp(1.1rem, 3.4vw, 2rem);
+  letter-spacing: 3px;
+  text-align: center;
+  line-height: 1.9;
+  white-space: pre-line;
+}
+#overlay-text.en {
+  font-family: Georgia, "Times New Roman", serif;
+  font-style: italic;
+  letter-spacing: 2px;
+  color: #cfcfcf;
+}
+#overlay-small {
+  color: #9a9a9a;
+  font-size: 1rem;
+  letter-spacing: 2px;
+  text-align: center;
+  line-height: 1.9;
+  white-space: pre-line;
+}
+#overlay-image {
+  max-width: 100%;
+  max-height: 72vh;
+  object-fit: contain;
+}
+#overlay-caption {
+  color: #bbb;
+  font-size: 1.05rem;
+  letter-spacing: 2px;
+  text-align: center;
+  line-height: 1.9;
+  white-space: pre-line;
+}
+
+/* ---------- 精神降维 ---------- */
+#dim-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 25;
+  background: #000;
+  opacity: 0.55;
+  pointer-events: none;
+}
+
+#alert-modal {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 30;
+  background: rgba(10, 10, 10, 0.92);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  padding: 26px 34px;
+  max-width: 80%;
+  text-align: center;
+}
+#alert-modal p {
+  color: #eee;
+  font-size: 1.2rem;
+  letter-spacing: 3px;
+  line-height: 1.7;
+}
+
+/* ---------- 动画 ---------- */
+@keyframes shake {
+  0%, 100% { transform: translate(0, 0); }
+  20% { transform: translate(-6px, 4px); }
+  40% { transform: translate(6px, -4px); }
+  60% { transform: translate(-4px, -4px); }
+  80% { transform: translate(4px, 4px); }
+}
+@keyframes shakeHard {
+  0%, 100% { transform: translate(0, 0); }
+  15% { transform: translate(-12px, 8px); }
+  30% { transform: translate(12px, -8px); }
+  45% { transform: translate(-10px, -8px); }
+  60% { transform: translate(10px, 8px); }
+  75% { transform: translate(-8px, 6px); }
+  90% { transform: translate(8px, -6px); }
+}
+.shake {
+  animation: shake 0.4s;
+}
+.shake-hard {
+  animation: shakeHard 0.6s;
+}
+
+#game.glitching {
+  animation: screenGlitch 0.5s steps(2);
+}
+@keyframes screenGlitch {
+  0% { filter: none; }
+  20% { filter: hue-rotate(90deg) contrast(1.5); }
+  40% { filter: invert(0.08) hue-rotate(-90deg); }
+  60% { filter: hue-rotate(45deg) saturate(2); }
+  80% { filter: contrast(1.6) hue-rotate(-45deg); }
+  100% { filter: none; }
+}
+
+@keyframes glitchText {
+  0% { opacity: 0.9; text-shadow: 2px 0 #0ff, -2px 0 #f0f; }
+  20% { opacity: 0.3; text-shadow: -2px 0 #0ff, 2px 0 #f0f; transform: translate(-50%, -48%) skewX(10deg); }
+  40% { opacity: 0.8; text-shadow: 2px 0 #f0f, -2px 0 #0ff; transform: translate(-50%, -52%); }
+  60% { opacity: 0.4; text-shadow: -3px 0 #0ff, 3px 0 #f0f; }
+  80% { opacity: 0.9; text-shadow: 3px 0 #f0f, -3px 0 #0ff; transform: translate(-50%, -50%) skewX(-8deg); }
+  100% { opacity: 0.7; text-shadow: 2px 0 #0ff, -2px 0 #f0f; }
+}
+
+.hidden {
+  display: none !important;
+}
