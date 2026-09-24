@@ -30,39 +30,34 @@ const CLUES = {
 const CLUE_IDS = ["clue-0", "clue-3", "clue-1", "clue-7"];
 const VENDING_CODE = "0317";
 
-/* 道具 */
-const ITEMS = {
-  "old-ticket": { id: "old-ticket", name: "旧游乐园门票", icon: "🎫" },
-  "orange-cap":  { id: "orange-cap",  name: "橙色汽水瓶盖", icon: "🥤" },
-  "wet-note":    { id: "wet-note",    name: "湿掉的寻人纸条", icon: "📜" },
+/* 道具（与对应小游戏的映射） */
+const itemConfig = {
+  "old-ticket": { id: "old-ticket", name: "旧游乐园门票", icon: "🎫", miniGame: "memoryMatch" },
+  "orange-cap":  { id: "orange-cap",  name: "橙色汽水瓶盖", icon: "🥤", miniGame: "vendingCode" },
+  "wet-note":    { id: "wet-note",    name: "湿掉的寻人纸条", icon: "📜", miniGame: "noteArrange" },
 };
 
-/* 小游戏 */
+/* 小游戏（三种不同的交互方式：翻牌 / 密码输入 / 拖拽排序） */
 const MINI_GAMES = {
-  vendingPuzzle: {
-    id: "vendingPuzzle",
+  memoryMatch: {
+    id: "memoryMatch",
+    title: "记忆翻牌",
+    prompt: "翻开卡片，找出所有相同的图案。",
+    wrong: "这段记忆还没有拼完整。",
+    itemId: "old-ticket",
+    symbols: ["🕒", "🥤", "🎫"], // 3 对图案
+  },
+  vendingCode: {
+    id: "vendingCode",
     title: "自动售货机密码",
     prompt: "输入正确的密码",
     wrong: "这个数字不属于今天。",
     itemId: "orange-cap",
   },
-  memoryPuzzle: {
-    id: "memoryPuzzle",
-    title: "记忆拼图",
-    prompt: "按那天的先后顺序，点击四段记忆。",
-    wrong: "记忆的顺序不对，再想一想。",
-    itemId: "old-ticket",
-    fragments: [
-      "进园时，天还没有黑。",
-      "售货机前，他说要喝橙色的汽水。",
-      "闭园广播响起来的时候，我松开了手。",
-      "再回头，他已经不在了。",
-    ],
-  },
-  notePuzzle: {
-    id: "notePuzzle",
+  noteArrange: {
+    id: "noteArrange",
     title: "纸条复原",
-    prompt: "按正确顺序点击文字，还原这句话。",
+    prompt: "拖拽文字卡片，还原这句话。",
     wrong: "字迹还没有恢复。",
     itemId: "wet-note",
     fragments: ["如果你看到他，", "请告诉他", "我已经", "回家了。"],
@@ -279,10 +274,13 @@ let activeMiniGame = null;   // 当前打开的小游戏 id（null 表示关闭�
 let duckRevealed = false;    // 小黄鸭是否已点击过（用于揭示角落线索）
 let noteRevealed = false;    // 塑料球下的纸条是否已翻开
 let vendingInput = "";       // 售货机密码输入
-let memoryOrder = [];        // 记忆拼图当前乱序
-let memoryLocked = [];       // 记忆拼图已正确点击的槽位
-let noteOrder = [];          // 纸条复原当前乱序
-let noteLocked = [];         // 纸条复原已正确点击的槽位
+// 记忆翻牌
+let matchCards = [];         // [{ value, matched }]，共 6 张
+let matchFlipped = [];       // 当前翻开的两张卡的索引
+let matchBusy = false;       // 翻回动画期间锁住交互
+// 纸条拖拽
+let noteOrder = [];          // 当前顺序（片段原始索引数组）
+let dragIndex = null;        // 正在拖拽的卡片槽位
 
 /* ---------- 七、音频系统（Web Audio 实时合成） ---------- */
 const audio = {
@@ -428,14 +426,14 @@ function handleAction(sceneName, action) {
   switch (action) {
     case "vending": {
       // 已通关：不再回应
-      if (gameState.completedMiniGames.includes("vendingPuzzle")) {
+      if (gameState.completedMiniGames.includes("vendingCode")) {
         showMessage(storyText.vendingMachine.solved);
         break;
       }
       // 已触发异常：进入密码阶段
       if (gameState.triggeredAnomalies.includes("vending-machine")) {
         if (hasAllClues()) {
-          openMiniGame("vendingPuzzle");
+          openMiniGame("vendingCode");
         } else {
           showSequence(storyText.vendingMachine.refuse, { interval: 1700, duration: 1600 });
         }
@@ -498,15 +496,15 @@ function handleAction(sceneName, action) {
       break;
 
     case "poolside":
-      if (gameState.completedMiniGames.includes("memoryPuzzle")) {
+      if (gameState.completedMiniGames.includes("memoryMatch")) {
         showMessage(storyText.poolSlide.poolsideDone);
         break;
       }
-      openMiniGame("memoryPuzzle");
+      openMiniGame("memoryMatch");
       break;
 
     case "paper":
-      if (gameState.completedMiniGames.includes("notePuzzle")) {
+      if (gameState.completedMiniGames.includes("noteArrange")) {
         showMessage(storyText.plasticBall.paperDone);
         break;
       }
@@ -514,7 +512,7 @@ function handleAction(sceneName, action) {
         noteRevealed = true;
         showSequence(storyText.plasticBall.paperFirst, { interval: 2000, duration: 1900 });
       } else {
-        openMiniGame("notePuzzle");
+        openMiniGame("noteArrange");
       }
       break;
 
@@ -787,7 +785,7 @@ function hasAllClues() {
 
 /* 获得道具（只能获得一次） */
 function collectItem(itemId) {
-  const item = ITEMS[itemId];
+  const item = itemConfig[itemId];
   if (!item) return;
   if (gameState.inventory.includes(itemId)) return;
 
@@ -798,15 +796,16 @@ function collectItem(itemId) {
   showSequence(storyText.items[itemId], { interval: 2000, duration: 1900 });
 }
 
-/* true end 所需三件道具 + 三个小游戏是否全部完成 */
+/* true end 所需三件道具 + 三个小游戏 + 四条线索是否全部完成 */
 function hasAllTrueEndItems() {
   return (
     gameState.inventory.includes("old-ticket") &&
     gameState.inventory.includes("orange-cap") &&
     gameState.inventory.includes("wet-note") &&
-    gameState.completedMiniGames.includes("memoryPuzzle") &&
-    gameState.completedMiniGames.includes("vendingPuzzle") &&
-    gameState.completedMiniGames.includes("notePuzzle")
+    gameState.completedMiniGames.includes("memoryMatch") &&
+    gameState.completedMiniGames.includes("vendingCode") &&
+    gameState.completedMiniGames.includes("noteArrange") &&
+    hasAllClues()
   );
 }
 
@@ -817,7 +816,7 @@ function updateInventory() {
     inventoryIndicator.textContent = "";
     return;
   }
-  const parts = gameState.inventory.map((id) => (ITEMS[id] ? ITEMS[id].icon + " " + ITEMS[id].name : id));
+  const parts = gameState.inventory.map((id) => (itemConfig[id] ? itemConfig[id].icon + " " + itemConfig[id].name : id));
   inventoryIndicator.textContent = "道具：" + parts.join("　");
   inventoryIndicator.classList.remove("hidden");
 }
@@ -835,8 +834,8 @@ function updateCluesIndicator() {
 /* ---------- 小游戏开关 ---------- */
 function openMiniGame(gameId) {
   if (!MINI_GAMES[gameId]) return;
-  // vendingPuzzle 必须要求线索齐全
-  if (gameId === "vendingPuzzle" && !hasAllClues()) return;
+  // vendingCode 必须要求线索齐全
+  if (gameId === "vendingCode" && !hasAllClues()) return;
 
   activeMiniGame = gameId;
   renderMiniGame(gameId);
@@ -855,15 +854,6 @@ function completeMiniGame(gameId) {
   }
 }
 
-function failMiniGame(gameId) {
-  const g = MINI_GAMES[gameId];
-  if (!g) return;
-  showMiniGameMessage(g.wrong);
-  if (gameId === "memoryPuzzle") resetMemoryPuzzle();
-  else if (gameId === "notePuzzle") resetNotePuzzle();
-  renderOrderPuzzle();
-}
-
 function showMiniGameMessage(msg) {
   miniGameMessage.textContent = msg;
   miniGameMessage.classList.add("visible");
@@ -876,17 +866,13 @@ function renderMiniGame(gameId) {
   miniGameMessage.textContent = "";
   miniGameMessage.classList.remove("visible");
 
-  if (gameId === "vendingPuzzle") {
-    renderVendingPuzzle();
-  } else {
-    if (gameId === "memoryPuzzle") resetMemoryPuzzle();
-    else resetNotePuzzle();
-    renderOrderPuzzle();
-  }
+  if (gameId === "memoryMatch") renderMemoryMatch();
+  else if (gameId === "vendingCode") renderVendingCode();
+  else if (gameId === "noteArrange") renderNoteArrange();
 }
 
-/* ---------- 小游戏：自动售货机密码 ---------- */
-function renderVendingPuzzle() {
+/* ---------- 小游戏：自动售货机密码（数字键盘输入） ---------- */
+function renderVendingCode() {
   vendingInput = "";
   miniGameBody.innerHTML = "";
 
@@ -918,12 +904,12 @@ function handleVendingKey(k) {
     vendingInput = "";
   } else if (k === "确认") {
     if (vendingInput === gameState.vendingCode) {
-      completeMiniGame("vendingPuzzle");
+      completeMiniGame("vendingCode");
       closeMiniGame();
       collectItem("orange-cap");
       return;
     } else {
-      showMiniGameMessage(MINI_GAMES.vendingPuzzle.wrong);
+      showMiniGameMessage(MINI_GAMES.vendingCode.wrong);
       vendingInput = "";
     }
   } else {
@@ -937,77 +923,187 @@ function updateVendingDisplay() {
   if (display) display.textContent = (vendingInput + "____").slice(0, 4);
 }
 
-/* ---------- 小游戏：记忆拼图 / 纸条复原（排序类） ---------- */
-function renderOrderPuzzle() {
-  const gameId = activeMiniGame;
-  const g = MINI_GAMES[gameId];
-  const order = gameId === "memoryPuzzle" ? memoryOrder : noteOrder;
-  const locked = gameId === "memoryPuzzle" ? memoryLocked : noteLocked;
+/* ---------- 小游戏：记忆翻牌 ---------- */
+function renderMemoryMatch() {
+  const g = MINI_GAMES.memoryMatch;
+  // 生成 3 对共 6 张牌并洗牌
+  const deck = [];
+  g.symbols.forEach((_, v) => { deck.push(v); deck.push(v); });
+  const order = shuffle(deck);
+  matchCards = order.map((v) => ({ value: v, matched: false }));
+  matchFlipped = [];
+  matchBusy = false;
+
+  miniGameBody.innerHTML = "";
+  const grid = document.createElement("div");
+  grid.className = "match-grid";
+
+  matchCards.forEach((card, i) => {
+    const el = document.createElement("button");
+    el.type = "button";
+    el.className = "match-card";
+    el.dataset.index = i;
+    el.textContent = "?";
+    el.addEventListener("click", (e) => {
+      e.stopPropagation();
+      flipMatchCard(i);
+    });
+    grid.appendChild(el);
+  });
+  miniGameBody.appendChild(grid);
+
+  // 重新开始（不能跳过）
+  const restart = document.createElement("button");
+  restart.type = "button";
+  restart.className = "mini-restart";
+  restart.textContent = "重新开始";
+  restart.addEventListener("click", (e) => {
+    e.stopPropagation();
+    renderMemoryMatch();
+  });
+  miniGameBody.appendChild(restart);
+}
+
+function flipMatchCard(i) {
+  if (matchBusy) return;
+  const card = matchCards[i];
+  if (card.matched) return;
+  if (matchFlipped.includes(i)) return;
+  if (matchFlipped.length >= 2) return;
+
+  matchFlipped.push(i);
+  updateMatchCard(i);
+
+  if (matchFlipped.length === 2) {
+    const [a, b] = matchFlipped;
+    if (matchCards[a].value === matchCards[b].value) {
+      // 配对成功
+      matchCards[a].matched = true;
+      matchCards[b].matched = true;
+      matchFlipped = [];
+      updateMatchCard(a);
+      updateMatchCard(b);
+      if (matchCards.every((c) => c.matched)) {
+        completeMiniGame("memoryMatch");
+        closeMiniGame();
+        collectItem("old-ticket");
+      }
+    } else {
+      // 翻牌失败：翻回
+      matchBusy = true;
+      showMiniGameMessage(MINI_GAMES.memoryMatch.wrong);
+      setTimeout(() => {
+        matchFlipped = [];
+        matchBusy = false;
+        updateMatchCard(a);
+        updateMatchCard(b);
+      }, 700);
+    }
+  }
+}
+
+function updateMatchCard(i) {
+  const el = miniGameBody.querySelector('.match-card[data-index="' + i + '"]');
+  if (!el) return;
+  const card = matchCards[i];
+  if (card.matched) {
+    el.classList.add("matched");
+    el.classList.remove("flipped");
+    el.textContent = MINI_GAMES.memoryMatch.symbols[card.value];
+  } else if (matchFlipped.includes(i)) {
+    el.classList.add("flipped");
+    el.classList.remove("matched");
+    el.textContent = MINI_GAMES.memoryMatch.symbols[card.value];
+  } else {
+    el.classList.remove("flipped", "matched");
+    el.textContent = "?";
+  }
+}
+
+/* ---------- 小游戏：湿掉的寻人纸条（拖拽排序） ---------- */
+function renderNoteArrange() {
+  const g = MINI_GAMES.noteArrange;
+  noteOrder = shuffle([0, 1, 2, 3]);
+  dragIndex = null;
 
   miniGameBody.innerHTML = "";
   const list = document.createElement("div");
-  list.className = "order-puzzle";
+  list.className = "note-list";
 
-  order.forEach((origIndex, slot) => {
-    const btn = document.createElement("button");
-    btn.type = "button";
-    btn.className = "fragment";
-    if (locked.includes(slot)) btn.classList.add("locked");
-    btn.textContent = g.fragments[origIndex];
-    btn.addEventListener("click", (e) => {
-      e.stopPropagation();
-      handleOrderClick(gameId, slot);
+  noteOrder.forEach((origIndex, slot) => {
+    const el = document.createElement("div");
+    el.className = "note-card";
+    el.draggable = true;
+    el.dataset.slot = slot;
+    el.textContent = g.fragments[origIndex];
+
+    el.addEventListener("dragstart", (e) => {
+      dragIndex = slot;
+      e.dataTransfer.effectAllowed = "move";
+      try { e.dataTransfer.setData("text/plain", String(slot)); } catch (err) {}
+      el.classList.add("dragging");
     });
-    list.appendChild(btn);
+    el.addEventListener("dragend", () => {
+      dragIndex = null;
+      list.querySelectorAll(".note-card").forEach((c) => c.classList.remove("dragging", "drag-over"));
+    });
+    el.addEventListener("dragover", (e) => {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = "move";
+      el.classList.add("drag-over");
+    });
+    el.addEventListener("dragleave", () => {
+      el.classList.remove("drag-over");
+    });
+    el.addEventListener("drop", (e) => {
+      e.preventDefault();
+      el.classList.remove("drag-over");
+      const target = parseInt(el.dataset.slot, 10);
+      if (dragIndex === null || dragIndex === target) return;
+      // 交换两卡
+      [noteOrder[dragIndex], noteOrder[target]] = [noteOrder[target], noteOrder[dragIndex]];
+      dragIndex = null;
+      renderNoteArrange();
+    });
+
+    list.appendChild(el);
   });
-
   miniGameBody.appendChild(list);
+
+  // 确认按钮
+  const confirm = document.createElement("button");
+  confirm.type = "button";
+  confirm.className = "mini-confirm";
+  confirm.textContent = "确认";
+  confirm.addEventListener("click", (e) => {
+    e.stopPropagation();
+    checkNoteArrange();
+  });
+  miniGameBody.appendChild(confirm);
 }
 
-function handleOrderClick(gameId, slot) {
-  const g = MINI_GAMES[gameId];
-  const order = gameId === "memoryPuzzle" ? memoryOrder : noteOrder;
-  const locked = gameId === "memoryPuzzle" ? memoryLocked : noteLocked;
-
-  if (locked.includes(slot)) return; // 已锁定的槽位不能再点
-
-  if (order[slot] === locked.length) {
-    // 点击的顺序正确：锁定该槽位
-    locked.push(slot);
-    if (locked.length === order.length) {
-      completeMiniGame(gameId);
-      closeMiniGame();
-      collectItem(g.itemId);
-    } else {
-      renderOrderPuzzle();
-    }
+function checkNoteArrange() {
+  if (noteOrder.every((orig, slot) => orig === slot)) {
+    completeMiniGame("noteArrange");
+    closeMiniGame();
+    collectItem("wet-note");
   } else {
-    failMiniGame(gameId);
+    showMiniGameMessage(MINI_GAMES.noteArrange.wrong);
   }
 }
 
-function resetMemoryPuzzle() {
-  memoryLocked = [];
-  memoryOrder = shuffledIndices(MINI_GAMES.memoryPuzzle.fragments.length);
-}
-
-function resetNotePuzzle() {
-  noteLocked = [];
-  noteOrder = shuffledIndices(MINI_GAMES.notePuzzle.fragments.length);
-}
-
-function shuffledIndices(n) {
-  const arr = [];
-  for (let i = 0; i < n; i++) arr.push(i);
-  for (let i = arr.length - 1; i > 0; i--) {
+/* ---------- 洗牌工具 ---------- */
+function shuffle(arr) {
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
-    [arr[i], arr[j]] = [arr[j], arr[i]];
+    [a[i], a[j]] = [a[j], a[i]];
   }
-  // 避免初始即为正确顺序
-  if (n > 1 && arr.every((v, i) => v === i)) {
-    [arr[0], arr[1]] = [arr[1], arr[0]];
+  // 避免排序类小游戏初始即为正确顺序
+  if (a.length > 1 && a.every((v, i) => v === i)) {
+    [a[0], a[1]] = [a[1], a[0]];
   }
-  return arr;
+  return a;
 }
 
 /* ============================================================
@@ -1165,10 +1261,11 @@ function restartGame() {
   duckRevealed = false;
   noteRevealed = false;
   vendingInput = "";
-  memoryLocked = [];
-  memoryOrder = [];
-  noteLocked = [];
+  matchCards = [];
+  matchFlipped = [];
+  matchBusy = false;
   noteOrder = [];
+  dragIndex = null;
 
   overlay.classList.add("hidden");
   overlayText.classList.add("hidden");

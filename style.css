@@ -497,14 +497,43 @@ body {
   border-color: #8a9a86;
 }
 
-/* 记忆拼图 / 纸条复原：排序片段 */
-.order-puzzle {
+/* 记忆翻牌 */
+.match-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+.match-card {
+  aspect-ratio: 1 / 1;
+  background: #161a16;
+  border: 1px solid #4a584a;
+  color: #ecebe0;
+  font-size: 1.7rem;
+  cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+.match-card:hover {
+  border-color: #8a9a86;
+}
+.match-card.flipped {
+  background: #1c221c;
+}
+.match-card.matched {
+  background: #23301f;
+  border-color: #7a8a72;
+  color: #cfe0c0;
+  cursor: default;
+  pointer-events: none;
+}
+
+/* 纸条拖拽 */
+.note-list {
   display: flex;
   flex-direction: column;
   gap: 8px;
+  margin-bottom: 14px;
 }
-
-.fragment {
+.note-card {
   padding: 12px 14px;
   background: #141814;
   border: 1px solid #4a584a;
@@ -512,17 +541,36 @@ body {
   font-size: 1rem;
   letter-spacing: 1px;
   line-height: 1.5;
-  cursor: pointer;
-  text-align: left;
+  cursor: grab;
+  user-select: none;
+  -webkit-user-select: none;
 }
-.fragment:hover {
+.note-card:active {
+  cursor: grabbing;
+}
+.note-card.dragging {
+  opacity: 0.4;
+}
+.note-card.drag-over {
   border-color: #8a9a86;
+  background: #1c241c;
 }
-.fragment.locked {
-  opacity: 0.45;
-  border-color: #3c4a3c;
-  cursor: default;
-  pointer-events: none;
+
+/* 小游戏内通用按钮（确认 / 重新开始） */
+.mini-confirm,
+.mini-restart {
+  width: 100%;
+  padding: 11px 0;
+  background: #1c241c;
+  border: 1px solid #5c6b5c;
+  color: #ecebe0;
+  font-size: 0.95rem;
+  letter-spacing: 2px;
+  cursor: pointer;
+}
+.mini-confirm:hover,
+.mini-restart:hover {
+  border-color: #8a9a86;
 }
 
 .hidden {
