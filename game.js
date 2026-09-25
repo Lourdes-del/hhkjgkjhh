@@ -190,6 +190,55 @@ const storyText = {
     allFound: ["你寻找的不是隐藏物。", "你只是需要一些证据，证明自己曾经来过。"],
   },
 
+  /* 轻度幽默：轻微、短暂、反差式，语调像「绝望的人在开玩笑」 */
+  humor: {
+    startFirst: "今天的游乐园，宣传语是：「来玩吧，别太在意为什么会想起你。」",
+    startReturn: "这座园子总是熟悉得让我想起某个该死的结局。",
+    clockFirst: "时间终于对上了。很高兴见到你，虽然我们也没见过。",
+    clockSecond: "现在知道为什么它不走了吗？因为它也在等一个没来的客人。",
+
+    vendingBefore: "本机仅接受不想被记住的货币。",
+    vendingAnomaly: "这不是故障，这是「营业方式」。",
+    vendingBeforePassword: "它不卖饮料，它卖的是回忆的去留。",
+    vendingAfterPassword: "机器终于愿意吐出一个被遗忘的东西。真是有点可惜。",
+    capAfter: "瓶盖是免费的，遗憾不是。",
+
+    ballFirst: "这个球看起来很安全，像一个人愿意装作没事。",
+    ballAnomaly: "出口牌真可爱，怎么一看就像在说：「别走，真的别走。」",
+    mazeFail: "你碰到了墙。这个地方真的很有自己的想法。",
+    noteAfter: "你终于拿回了一张纸。它看起来像是从一场失踪里捞出来的。",
+
+    slidePool: "为什么这里的水看起来像在藏东西？我只是想问一句：你也想藏起来吗？",
+    slideAnomaly: "很遗憾，下午从来不谈价钱。",
+    sortFail: "记忆会嘲笑你，像一个老朋友在你拖着脚步时指着门。",
+
+    slideFirst: "当然，我也一样。人总要找几个借口来解释自己为什么不肯离开。",
+    beforeDuck: "你终于进了池子。没什么比一张小黄鸭更能让人放下戒心。",
+    sortAfter: "门票终于找到了。你看，记忆也会捡东西。",
+
+    duckFirst: "这只鸭子看起来很友善，像一个从未失去过朋友的人。",
+    duckAnomaly: "鸭子位置改变了。它显然也不想被你困住。",
+    benchEgg: "长椅空着，像是某个人刚刚离开，又突然觉得很像自己。",
+    nearExit: "这张脸我认识，但我不知道是因为我在看它，还是它在看我。",
+
+    eggFrame: "照片不见了。好像它终于决定不再替你保存什么。",
+    eggBroadcast: ["广播：「欢迎回到闭园前的记忆。」", "广播：「顺便提醒，你仍然是最后一个在这里的人。」"],
+    eggWater: "它没有倒影。大概就是因为做梦的人，不能被镜子看见。",
+    eggBench: "这张椅子看起来很累，像是等了太久，又什么都没等到。",
+
+    badBefore: "系统已经开始清理你了。真是礼貌。",
+    goodBefore: "你终于记起了事情，像一个人终于承认自己确实需要一张门票。",
+    normalBefore: "如果一切都没发生，那恭喜你，真的活在了一个很安静的梦里。",
+    trueEndAfter: "你醒来了。谢谢你愿意陪这个梦走完最后一里。",
+
+    random: [
+      "这里的风都在假装自己很忙。",
+      "如果你觉得哪里不对劲，说明你终于开始认真看了。",
+      "欢迎光临。请把来路留在门口。",
+      "别担心，这里的一切会在你想起来之前结束。",
+    ],
+  },
+
   endings: {
     bad: {
       pre: ["系统无法继续保存一个已经醒来的人。"],
@@ -332,6 +381,8 @@ let machineSequence = [];
 let machineStep = 0;
 let machinePhase = "watch";  // "watch" 闪烁中 | "repeat" 玩家重复中
 let machineTimer = null;
+let humorTimer = null;       // 幽默小字自动隐藏计时器
+let poolHumorShown = false;  // 滑梯水池幽默是否已显示
 
 /* ---------- 七、音频系统（Web Audio 实时合成） ---------- */
 const audio = {
@@ -392,6 +443,7 @@ const miniGamePrompt = $("mini-game-prompt");
 const miniGameBody = $("mini-game-body");
 const miniGameMessage = $("mini-game-message");
 const miniGameClose = $("mini-game-close");
+const humorText = $("humor-text");
 
 /* ============================================================
    九、核心游戏逻辑
@@ -495,6 +547,7 @@ function handleAction(sceneName, action) {
       }
       // 时钟已两次：首次触发售货机异常，之后进入密码
       if (!gameState.triggeredAnomalies.includes("vending-machine")) {
+        showHumor(storyText.humor.vendingBefore, 800);
         showSequence(
           [storyText.vendingMachine.click],
           {
@@ -504,6 +557,7 @@ function handleAction(sceneName, action) {
               if (triggerAnomaly("vending-machine", storyText.vendingMachine.anomaly, { sub: storyText.vendingMachine.anomalySub })) {
                 shakeScreen("hard");
                 playVendingBeep();
+                showHumor(storyText.humor.vendingAnomaly, 800);
               }
             },
           }
@@ -511,6 +565,7 @@ function handleAction(sceneName, action) {
         break;
       }
       if (!gameState.passwordSolved) {
+        showHumor(storyText.humor.vendingBeforePassword, 600);
         openPasswordEntry();
         break;
       }
@@ -529,6 +584,7 @@ function handleAction(sceneName, action) {
           duration: 1600,
           onDone: () => {
             triggerAnomaly("exit-sign", storyText.plasticBall.anomaly);
+            showHumor(storyText.humor.ballAnomaly, 1000);
           },
         }
       );
@@ -536,6 +592,10 @@ function handleAction(sceneName, action) {
 
     case "pool":
       playNavSound();
+      if (!poolHumorShown) {
+        poolHumorShown = true;
+        showHumor(storyText.humor.slidePool, 1000);
+      }
       showSequence(
         [storyText.playgroundSlide.pool],
         { interval: 1900, duration: 1800, onDone: () => enterScene("poolSlide") }
@@ -546,6 +606,7 @@ function handleAction(sceneName, action) {
       if (triggerAnomaly("pool-slide", storyText.poolSlide.slideAnomaly, { sub: storyText.poolSlide.slideSub })) {
         shakeScreen("light");
         playAnomalySound();
+        showHumor(storyText.humor.slideFirst, 1200);
       }
       break;
 
@@ -603,8 +664,12 @@ function onSceneEnter(sceneName) {
     case "start":
       if (visits === 1) {
         showSequence(storyText.start.first, { interval: 2600, duration: 2500 });
+        showHumor(storyText.humor.startFirst, 3000);
       } else if (visits >= 2) {
         triggerAnomaly("start-revisit", storyText.start.revisit, { count: false });
+        if (gameState.anomalyCount === 0) {
+          showHumor(storyText.humor.startReturn, 2000);
+        }
       }
       break;
 
@@ -615,7 +680,9 @@ function onSceneEnter(sceneName) {
       break;
 
     case "plasticBall":
-      if (visits >= 2) {
+      if (visits === 1) {
+        showHumor(storyText.humor.ballFirst, 1500);
+      } else if (visits >= 2) {
         showMessage(storyText.plasticBall.reenter, { duration: 1800 });
       }
       break;
@@ -623,15 +690,24 @@ function onSceneEnter(sceneName) {
     case "playgroundSlide":
       if (visits >= 2 && triggerAnomaly("playground-slide", storyText.playgroundSlide.anomaly)) {
         playAnomalySound();
+        showHumor(storyText.humor.slideAnomaly, 1200);
+      }
+      break;
+
+    case "poolSlide":
+      if (visits === 1) {
+        showHumor(storyText.humor.beforeDuck, 1500);
       }
       break;
 
     case "yellowDuck":
       if (visits === 1) {
         showMessage(storyText.yellowDuck.first);
+        showHumor(storyText.humor.duckFirst, 1200);
       } else if (visits >= 2) {
         if (triggerAnomaly("yellow-duck", storyText.yellowDuck.anomaly, { sub: storyText.yellowDuck.anomalySub })) {
           playAnomalySound();
+          showHumor(storyText.humor.duckAnomaly, 1200);
         }
         triggerExtraShadow();
       }
@@ -640,6 +716,7 @@ function onSceneEnter(sceneName) {
     case "exit":
       if (visits === 1) {
         showSequence(storyText.exit.enter, { interval: 2400, duration: 2300 });
+        showHumor(storyText.humor.nearExit, 2800);
       }
       break;
 
@@ -648,6 +725,7 @@ function onSceneEnter(sceneName) {
   }
 
   maybeOccasionalLine();
+  maybeRandomHumor();
 }
 
 function triggerAnomaly(anomalyId, message, options = {}) {
@@ -717,6 +795,29 @@ function showSequence(messages, options = {}) {
   };
 
   step();
+}
+
+/* 显示右下角幽默小字（可带延迟，短暂出现后自动隐藏） */
+function showHumor(text, delay = 0) {
+  if (!humorText || !text) return;
+  const fire = () => {
+    humorText.textContent = text;
+    humorText.classList.add("visible");
+    clearTimeout(humorTimer);
+    humorTimer = setTimeout(() => humorText.classList.remove("visible"), 4500);
+  };
+  if (delay > 0) {
+    setTimeout(fire, delay);
+  } else {
+    fire();
+  }
+}
+
+/* 场景进入时偶尔出现的随机一言 */
+function maybeRandomHumor() {
+  if (Math.random() > 0.3) return;
+  const pool = storyText.humor.random;
+  showHumor(pool[Math.floor(Math.random() * pool.length)], 1200);
 }
 
 function maybeOccasionalLine() {
@@ -801,12 +902,14 @@ function handleClock() {
     gameState.clockClicks = 1;
     updateClockDisplay();
     showMessage(storyText.start.clockFirst);
+    showHumor(storyText.humor.clockFirst, 900);
   } else {
     gameState.clockClicks = 2;
     if (clockDisplay) clockDisplay.textContent = "03:18";
     setTimeout(() => { if (clockDisplay) clockDisplay.textContent = "03:17"; }, 900);
     triggerAnomaly("clock-time");
     showSequence(storyText.start.clockSecond, { interval: 2400, duration: 2300 });
+    showHumor(storyText.humor.clockSecond, 2600);
   }
 }
 
@@ -851,6 +954,7 @@ function handleVendingKey(k) {
     if (vendingInput === VENDING_CODE) {
       gameState.passwordSolved = true;
       closeMiniGame();
+      showHumor(storyText.humor.vendingAfterPassword, 500);
       openMiniGame("machineMemory");
       return;
     } else {
@@ -906,11 +1010,31 @@ function discoverEasterEgg(eggId) {
   gameState.discoveredEasterEggs.push(eggId);
   updateEggIndicator();
 
+  // 彩蛋幽默（右下角小字，稍后出现）
+  const humor = eggHumorFor(eggId);
+  if (humor) showHumor(humor, 3400);
+
   if (gameState.discoveredEasterEggs.length === Object.keys(EASTER_EGGS).length) {
     // 最后一个彩蛋：先显示该彩蛋文字，再显示集齐提示
     showSequence([...egg.text, ...storyText.easterEggs.allFound], { interval: 2400, duration: 2300 });
   } else {
     showSequence(egg.text, { interval: 2400, duration: 2300 });
+  }
+}
+
+/* 返回某彩蛋对应的幽默文案（无则返回 null） */
+function eggHumorFor(eggId) {
+  switch (eggId) {
+    case "egg-frame":
+      return storyText.humor.eggFrame;
+    case "egg-speaker":
+      return storyText.humor.eggBroadcast.join(" ");
+    case "egg-water":
+      return storyText.humor.eggWater;
+    case "egg-bench":
+      return Math.random() < 0.5 ? storyText.humor.benchEgg : storyText.humor.eggBench;
+    default:
+      return null;
   }
 }
 
@@ -930,6 +1054,16 @@ function collectItem(itemId) {
   updateInventory();
   playItemSound();
   showSequence(storyText.items[itemId], { interval: 2000, duration: 1900 });
+
+  // 道具获得后的幽默
+  const itemHumor = {
+    "wet-note": storyText.humor.noteAfter,
+    "old-ticket": storyText.humor.sortAfter,
+    "orange-cap": storyText.humor.capAfter,
+  };
+  if (itemHumor[itemId]) {
+    showHumor(itemHumor[itemId], 3000);
+  }
 }
 
 /* true end 条件：三道具 + 三小游戏 + 时钟两次 + 密码正确 */
@@ -1048,10 +1182,12 @@ function moveMaze(dr, dc) {
   const nc = mazePos.c + dc;
   if (nr < 0 || nc < 0 || nr >= MAZE.length || nc >= MAZE[0].length) {
     showMiniGameMessage(MINI_GAMES.paperMaze.wrong);
+    if (Math.random() < 0.25) showHumor(storyText.humor.mazeFail);
     return;
   }
   if (MAZE[nr][nc] === 1) {
     showMiniGameMessage(MINI_GAMES.paperMaze.wrong);
+    if (Math.random() < 0.25) showHumor(storyText.humor.mazeFail);
     return;
   }
   mazePos = { r: nr, c: nc };
@@ -1135,6 +1271,7 @@ function checkTicketOrder() {
     collectItem("old-ticket");
   } else {
     showMiniGameMessage(MINI_GAMES.ticketOrder.wrong);
+    showHumor(storyText.humor.sortFail);
   }
 }
 
@@ -1241,6 +1378,7 @@ function checkEnding() {
 
   if (gameState.anomalyCount >= gameState.anomalyLimit) {
     gameState.ending = "bad";
+    showHumor(storyText.humor.badBefore, 800);
     beginEndingSequence([
       { type: "text", lines: E.bad.pre },
       { type: "text", lines: [E.bad.english], english: true },
@@ -1249,6 +1387,7 @@ function checkEnding() {
     ]);
   } else if (gameState.inventory.includes("old-ticket")) {
     gameState.ending = "good";
+    showHumor(storyText.humor.goodBefore, 800);
     const steps = [
       { type: "text", lines: E.good.pre },
       { type: "text", lines: [E.good.english], english: true },
@@ -1259,7 +1398,7 @@ function checkEnding() {
         { type: "text", lines: E.good.trueEntry },
         { type: "text", lines: E.good.trueEnd1 },
         { type: "text", lines: E.good.trueEnd2 },
-        { type: "final", title: E.good.trueEndTitle, lines: E.good.trueEnd3 }
+        { type: "final", title: E.good.trueEndTitle, lines: [...E.good.trueEnd3, storyText.humor.trueEndAfter] }
       );
     } else {
       steps.push(
@@ -1270,6 +1409,7 @@ function checkEnding() {
     beginEndingSequence(steps);
   } else {
     gameState.ending = "normal";
+    showHumor(storyText.humor.normalBefore, 800);
     beginEndingSequence([
       { type: "text", lines: E.normal.pre },
       { type: "text", lines: [E.normal.english], english: true },
@@ -1378,6 +1518,10 @@ function restartGame() {
   passwordMode = false;
   vendingInput = "";
   noteRevealed = false;
+  poolHumorShown = false;
+  clearTimeout(humorTimer);
+  humorTimer = null;
+  if (humorText) humorText.classList.remove("visible");
   mazePos = { r: 0, c: 0 };
   ticketOrder = [];
   ticketSelected = null;
