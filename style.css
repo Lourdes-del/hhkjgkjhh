@@ -551,11 +551,10 @@ body {
   border-color: #8a9a86;
 }
 
-/* 迷宫 */
+/* 迷宫（列数由 JS 按 MAZE 宽度动态设置） */
 .maze-grid {
   display: grid;
-  grid-template-columns: repeat(7, 1fr);
-  gap: 2px;
+  gap: 1px;
   margin-bottom: 14px;
 }
 .maze-cell {
